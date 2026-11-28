@@ -5,7 +5,7 @@
 <script>(function(){
   var D=document.documentElement, MQ=null;
   try{ MQ=window.matchMedia('(prefers-color-scheme: dark)'); }catch(e){}
-  function mode(){ var m='dark'; try{ m=localStorage.getItem('rfq_theme')||'dark'; }catch(e){} return (m==='light'||m==='dark'||m==='system')?m:'dark'; }
+  function mode(){ var m=null; try{ m=localStorage.getItem('rfq_theme'); if(!localStorage.getItem('rfq_theme_v2')){ if(m===null||m==='dark'){ m='system'; localStorage.setItem('rfq_theme','system'); } localStorage.setItem('rfq_theme_v2','1'); } }catch(e){} return (m==='light'||m==='dark'||m==='system')?m:'system'; }
   function paint(m){
     var r = m==='system' ? ((MQ&&MQ.matches)?'dark':'light') : m;
     D.setAttribute('data-theme',r); D.setAttribute('data-theme-mode',m);
@@ -2496,29 +2496,30 @@ html[data-theme=light] .lg2-logo .lg2-badge{
       <button class="btn icon mob-only" onclick="reload()" title="Muat ulang">⟳</button>
       <button class="btn icon mob-only" id="btnMore" onclick="event.stopPropagation();$('hctl').classList.toggle('open')" title="Lainnya">⋯</button>
       <div class="hctl" id="hctl" onclick="event.stopPropagation()">
-      <button class="btn" onclick="reload()" title="Ambil data terbaru dari Google Sheet">Muat ulang</button>
-      <label class="autoref" title="Ambil data terbaru otomatis (termasuk input dari Google Sheet)">⟳ Auto
-        <select id="autoSel" onchange="setAuto(+this.value)">
+      <div class="split" id="reloadSplit">
+        <button type="button" class="sp-main" onclick="reload()" title="Ambil data terbaru dari Google Sheet"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4.5h-4.5"/></svg><span>Muat ulang</span></button>
+        <button type="button" class="sp-car" id="autoCar" onclick="toggleHMenu('autoMenu',event)" title="Auto refresh" aria-haspopup="true"><svg class="v12-ic chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="hmenu" id="autoMenu"><div class="mh">Auto refresh</div><button type="button" data-v="0">Nonaktif</button><button type="button" data-v="1">Setiap 1 menit</button><button type="button" data-v="2">Setiap 2 menit</button><button type="button" data-v="3">Setiap 3 menit</button><button type="button" data-v="5">Setiap 5 menit</button><button type="button" data-v="10">Setiap 10 menit</button></div>
+        <label class="autoref" title="Ambil data terbaru otomatis">⟳ Auto <select id="autoSel" onchange="setAuto(+this.value)">
           <option value="0">Mati</option><option value="1">1 mnt</option><option value="2">2 mnt</option><option value="3">3 mnt</option><option value="5">5 mnt</option><option value="10">10 mnt</option>
-        </select>
-      </label>
-      <div class="theme-seg" id="themeSeg" role="radiogroup" aria-label="Tema tampilan">
-        <button type="button" role="radio" data-m="system" onclick="pickTheme('system')" title="Ikuti pengaturan perangkat (otomatis terang / gelap)"><span class="ti"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor"/></svg></span><span class="tl">Sistem</span></button>
-        <button type="button" role="radio" data-m="light" onclick="pickTheme('light')" title="Tema terang"><span class="ti">☀</span><span class="tl">Terang</span></button>
-        <button type="button" role="radio" data-m="dark" onclick="pickTheme('dark')" title="Tema gelap"><span class="ti">🌙</span><span class="tl">Gelap</span></button>
+        </select></label>
       </div>
       <div class="zoomwrap">
-        <button class="zoombtn" id="zoomBtn" onclick="toggleZoomPop(event)" title="Zoom tampilan">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
-        </button>
+        <button class="zoombtn" id="zoomBtn" onclick="toggleZoomPop(event)" title="Skala tampilan"><span id="zoomTxt">100%</span><svg class="v12-ic chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="zoompop" id="zoomPop" onclick="event.stopPropagation()">
-          <span class="zl">Zoom: <b id="zoomVal">100%</b></span>
-          <button class="zb" id="btnFsMinus" onclick="zoomStep(-1)" title="Perkecil">−</button>
-          <button class="zb" id="btnFsPlus" onclick="zoomStep(1)" title="Perbesar">+</button>
-          <button class="btn sm" onclick="zoomReset()">Reset</button>
+          <div class="zh"><span>Skala tampilan</span><button type="button" class="zr" onclick="zoomReset()">Reset</button></div>
+          <div class="zrow"><button type="button" class="zb" id="btnFsMinus" onclick="zoomStep(-1)" title="Perkecil">−</button><b id="zoomVal">100%</b><button type="button" class="zb" id="btnFsPlus" onclick="zoomStep(1)" title="Perbesar">+</button></div>
         </div>
       </div>
-      <button class="btn primary" id="btnNew" style="display:none" onclick="openForm('new')">＋ Input RFQ</button>
+      <div class="themewrap">
+        <button type="button" class="ibtn" id="themeBtn" onclick="toggleHMenu('themeMenu',event)" title="Tema" aria-haspopup="true"><span id="themeIco"></span></button>
+        <div class="hmenu" id="themeMenu"><div class="mh">Tema</div>
+          <button type="button" role="radio" data-m="system" onclick="pickTheme('system')"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor"/></svg>Sistem</button>
+          <button type="button" role="radio" data-m="light" onclick="pickTheme('light')"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>Terang</button>
+          <button type="button" role="radio" data-m="dark" onclick="pickTheme('dark')"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></svg>Gelap</button>
+        </div>
+      </div>
+      <button class="btn primary" id="btnNew" style="display:none" onclick="openForm('new')"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Input RFQ</button>
       <span class="userchip" id="userBox" style="display:none!important">…</span>
       </div>
     </div>
@@ -2530,9 +2531,9 @@ html[data-theme=light] .lg2-logo .lg2-badge{
           <div><h2 id="heroHi">Halo!</h2><div class="hero-sub" id="heroSub"></div></div>
           <button class="btn sm" id="heroTog" onclick="toggleHero()" title="Tampilkan / sembunyikan ringkasan">Ringkasan ▾</button>
         </div>
-        <div class="tiles" id="heroTiles"></div>
-        <div class="wcard hero-rem" id="remBox"><div class="rem-bar"><div class="rem-main" onclick="remGo()" title="Lihat daftar RFQ yang akan submit"><span class="bell">🔔<i id="remBadge">0</i></span><span class="rt1"><b>Halo, <span id="remName"></span>!</b> <em>REMINDER</em> · RFQ/tender yang akan submit dalam waktu dekat</span></div><button class="car" id="remCar" onclick="toggleRem(event)" title="Lihat ringkas">▾</button></div><div class="rem" id="wRem"></div></div>
-        <div class="hero-wid">
+        <div class="sum-body">
+          <div class="tiles" id="heroTiles"></div>
+          <div class="hero-wid">
           <div class="dgrid">
             <div class="wcard"><h3>Semua RFQ masuk <span class="count">· Go / Not Go / Review</span></h3><div id="wD1"></div></div>
             <div class="wcard"><h3>Status submit <span class="count">· belum / sudah / Not Go</span></h3><div id="wD5"></div></div>
@@ -2543,44 +2544,43 @@ html[data-theme=light] .lg2-logo .lg2-badge{
               <div id="wD4"></div></div>
           </div>
         </div>
+        </div>
       </div>
-      <!-- FILTERS -->
-      <div class="filters" id="filterBox">
-        <div class="frow">
-          <div class="search">
+      <div class="rem-row" id="remRow">
+        <div class="wcard hero-rem" id="remBox"><div class="rem-bar"><div class="rem-main" onclick="remGo()" title="Lihat daftar RFQ yang akan submit"><span class="bell">🔔<i id="remBadge">0</i></span><span class="rt1"><b class="rt-hi">Halo, <span id="remName"></span>!</b> <em>REMINDER</em><span class="rt-long"> · RFQ/tender yang akan submit dalam waktu dekat</span><span class="rt-short">RFQ/tender</span></span></div><button class="car" id="remCar" onclick="toggleRem(event)" title="Lihat ringkas">▾</button></div><div class="rem" id="wRem"></div></div>
+        <div class="wcard hero-rem ag-rem empty" id="agRemBox"><div class="rem-bar"><div class="rem-main" onclick="toggleAgRem(event)" title="Lihat kegiatan terdekat"><span class="bell">📅<i id="agRemBadge">0</i></span><span class="rt1"><em>REMINDER</em><span class="rt-long"> · kegiatan 7 hari ke depan</span><span class="rt-short">Kegiatan</span></span></div><button class="car" id="agRemCar" onclick="toggleAgRem(event)" title="Lihat ringkas">▾</button></div><div class="rem" id="agWRem"></div></div>
+      </div>
+      <div class="dec-row" id="decRow">
+        <span class="dn-leg" id="decLeg" style="display:none"></span><button class="btn sm tneed on" id="btnOpenOnly" onclick="S.openOnly=false;render()" title="Klik untuk menampilkan semua lagi" style="display:none">⏳ Belum submit ✕</button><button class="btn sm tneed on" id="btnRem" onclick="S.remOnly=false;render()" title="Klik untuk menampilkan semua lagi" style="display:none">⏰ ASAP + overdue s.d. H-2 ✕</button><button class="btn sm tneed" id="btnNeedT" onclick="toggleNeedTender()" title="Project berstatus Go yang belum dihubungkan ke tender.asuka" style="display:none">⚠ Go belum di tender <b id="tnCnt">0</b></button>
+        <span class="tsp"></span>
+        <button class="btn sm" id="btnResetMini" onclick="resetFilters()" style="display:none" title="Hapus semua filter">↺ Atur ulang filter</button>
+      </div>
+      <!-- TOOLBAR (cari · rentang · filter · urut · export) -->
+      <div class="filters tb1" id="filterBox">
+        <div class="search">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
             <input type="search" id="fSearch" placeholder="Cari project, client, remark…" oninput="render()">
           </div>
-          <button class="btn mob-only" id="btnFilt" onclick="$('filterBox').classList.toggle('open')">⚙ Filter <span id="filtCount"></span></button>
-          <button class="btn" id="btnReset" onclick="resetFilters()" title="Hapus semua filter">↺ Atur ulang</button>
-        </div>
-        <div class="frow f2">
-          <span class="flbl">Rentang</span>
+        <div class="rng" id="rngBox">
+          <button type="button" class="rng-b" id="rngBasisBtn" onclick="toggleTb('rngBasisMenu',event)" title="Acuan rentang"><span class="v12-ico" id="rngBasisIco"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 13h4.5l1.5 2.5h5L16 13h4.5"/><path d="M6 5h12l2.5 8v6.5h-17V13z"/></svg></span><span class="lbl" id="rngBasisTxt">Date Received</span><svg class="v12-ic chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <button type="button" class="rng-r" id="rngRangeBtn" onclick="toggleTb('rngRangeMenu',event)" title="Pilih rentang waktu"><span class="hp-only"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><span class="lbl" id="rngRangeTxt">Semua</span><svg class="v12-ic chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="tbmenu" id="rngBasisMenu" onclick="event.stopPropagation()"><div class="mh">Acuan rentang</div><button type="button" data-b="received"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 13h4.5l1.5 2.5h5L16 13h4.5"/><path d="M6 5h12l2.5 8v6.5h-17V13z"/></svg>Date Received</button><button type="button" data-b="submission"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 10.5 13.5"/><path d="M21 3l-6.5 18-4-8.5L2 8.5z"/></svg>Target Submit</button></div>
+          <div class="tbmenu" id="rngRangeMenu" onclick="event.stopPropagation()"><div class="mh hp-only">Acuan rentang</div><div class="bas-hp hp-only"><button type="button" data-b="received"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 13h4.5l1.5 2.5h5L16 13h4.5"/><path d="M6 5h12l2.5 8v6.5h-17V13z"/></svg>Date Received</button><button type="button" data-b="submission"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 10.5 13.5"/><path d="M21 3l-6.5 18-4-8.5L2 8.5z"/></svg>Target Submit</button></div><div class="mh">Pilih rentang waktu</div><div class="seg pills" id="quickR">
+            <button data-q="today">Hari ini</button><button data-q="yesterday">Kemarin</button><button data-q="tomorrow" class="sub-only" style="display:none">Besok</button><button data-q="lastweek" class="sub-only" style="display:none">Minggu lalu</button><button data-q="week">Minggu ini</button><button data-q="nextweek" class="sub-only" style="display:none">Minggu depan</button><button data-q="month">Bulan ini</button><button data-q="all" class="on">Semua</button><button data-q="custom">📅 Pilih tanggal</button>
+          </div><div id="customWrap" style="display:none"><div class="mh">Pilih tanggal kustom</div><span class="custom-range" id="customRange" style="display:none">
+            <input type="date" id="rFrom" onchange="releaseLock();applyRange()"><span>–</span><input type="date" id="rTo" onchange="releaseLock();applyRange()">
+          </span><button type="button" class="btn primary" onclick="applyRange();closeTb()">Terapkan Tanggal</button></div></div>
           <select id="rangeBasis" class="fsel basis" onchange="onBasisChange()">
             <option value="received">📥 Date Received</option>
             <option value="submission">📤 Target Submit</option>
-          </select>
-          <div class="seg pills" id="quickR">
-            <button data-q="today">Hari ini</button><button data-q="yesterday">Kemarin</button><button data-q="tomorrow" class="sub-only" style="display:none">Besok</button><button data-q="lastweek" class="sub-only" style="display:none">Minggu lalu</button><button data-q="week">Minggu ini</button><button data-q="nextweek" class="sub-only" style="display:none">Minggu depan</button><button data-q="month">Bulan ini</button><button data-q="all" class="on">Semua</button><button data-q="custom">📅 Pilih tanggal</button>
-          </div>
-          <span class="custom-range" id="customRange" style="display:none">
-            <input type="date" id="rFrom" onchange="releaseLock();applyRange()"><span>–</span><input type="date" id="rTo" onchange="releaseLock();applyRange()">
-          </span>
-          <input type="hidden" id="fFrom"><input type="hidden" id="fTo"><input type="hidden" id="fSubFrom"><input type="hidden" id="fSubTo">
+          </select><input type="hidden" id="fFrom"><input type="hidden" id="fTo"><input type="hidden" id="fSubFrom"><input type="hidden" id="fSubTo">
         </div>
-        <div class="frow f3">
-          <span class="flbl">Filter</span>
-          <select id="fCategory" class="fsel" onchange="render()"></select>
-          <select id="fPic" class="fsel" onchange="render()"></select>
-          <select id="fDecision" class="fsel" onchange="render()"></select>
-          <select id="fStatus" class="fsel" onchange="render()"></select>
-          <select id="fClientType" class="fsel" onchange="render()"></select>
-          <select id="fUrgency" class="fsel not-log" onchange="render()">
-            <option value="">Semua deadline</option><option value="OVERDUE">⛔ Overdue</option><option value="THIS WEEK">⚠ This week / ASAP</option><option value="LATER">Later</option><option value="Selesai">✓ Submitted</option>
-          </select>
-          <label class="chk not-log"><input type="checkbox" id="fNoGo" onchange="render()"> Tampilkan "Not Go"</label>
-          <label class="chk" id="fAsapW" style="display:none" title="ASAP = Target Submit belum ditentukan (TBD)"><input type="checkbox" id="fAsap" checked onchange="render()"> Tampilkan ASAP</label>
+        <button type="button" class="tbbtn" id="btnFilt" onclick="openFilterModal()" title="Filter category, PIC, decision, status, client type, deadline"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg><span class="lbl">Filter</span><span id="filtCount" class="fcnt"></span></button>
+        <div class="sortw" id="sortW" data-onlyview="active">
+          <button type="button" class="tbbtn" id="sortBtn" onclick="toggleTb('sortMode',event)" title="Urutkan daftar"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3"/><path d="M17 20V4M17 4l-3 3M17 4l3 3"/></svg><span class="lbl" id="sortTxt">RFQ terbaru</span><svg class="v12-ic chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="tbmenu" id="sortMode" onclick="event.stopPropagation()"><div class="mh">Urutkan</div><button data-m="received">RFQ terbaru</button><button data-m="deadline">Deadline terdekat</button><button data-m="lastsub">Submit terakhir</button></div>
         </div>
+        <button type="button" class="tbbtn" id="btnExport" data-onlyview="active" onclick="openReport()" title="Laporan PDF: statistik, donat, lalu daftar"><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M12 15l-4-4M12 15l4-4"/><path d="M5 20h14"/></svg><span class="lbl">Export PDF</span></button>
       </div>
 
       <!-- STATISTIK -->
@@ -2605,15 +2605,6 @@ html[data-theme=light] .lg2-logo .lg2-badge{
 
       <!-- RFQ AKTIF -->
       <section id="view-active">
-        <div class="tbar">
-          <span class="sortlbl">Urutkan:</span>
-          <div class="seg" id="sortMode"><button data-m="received">🆕 RFQ terbaru</button><button data-m="deadline">⏰ Deadline terdekat</button><button data-m="lastsub">✅ Submit terakhir</button></div>
-          <button class="btn sm tneed on" id="btnRem" onclick="S.remOnly=false;render()" title="Klik untuk menampilkan semua lagi" style="display:none">⏰ ASAP + overdue s.d. H-2 ✕</button>
-          <span class="dn-leg" id="decLeg" style="display:none"></span><button class="btn sm tneed on" id="btnOpenOnly" onclick="S.openOnly=false;render()" title="Klik untuk menampilkan semua lagi" style="display:none">⏳ Belum submit ✕</button>
-          <button class="btn sm tneed" id="btnNeedT" onclick="toggleNeedTender()" title="Project berstatus Go yang belum dihubungkan ke tender.asuka" style="display:none">⚠ Go belum di tender <b id="tnCnt">0</b></button>
-          <span class="tsp"></span>
-          <button class="btn sm" onclick="openReport()" title="Laporan PDF: statistik, donat, lalu daftar">⬇ Export PDF</button>
-        </div>
         <div class="tbl-wrap"><table id="tblActive"></table></div>
         <div class="cards" id="cardsActive"></div>
       </section>
@@ -2701,6 +2692,25 @@ html[data-theme=light] .lg2-logo .lg2-badge{
   </div>
 </div>
 
+<!-- FILTER MODAL -->
+<div class="modal-bg" id="mFilter"><div class="modal sm fmodal">
+  <header><div><h2><svg class="v12-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>Filter Proposal &amp; RFQ</h2></div><button class="x" onclick="closeModal('mFilter')">×</button></header>
+  <div class="body">
+    <div class="fgrid">
+      <div class="ff"><label>Category</label><select id="fCategory" class="fsel" onchange="render()"></select></div>
+      <div class="ff"><label>PIC</label><select id="fPic" class="fsel" onchange="render()"></select></div>
+      <div class="ff"><label>Decision</label><select id="fDecision" class="fsel" onchange="render()"></select></div>
+      <div class="ff"><label>Status</label><select id="fStatus" class="fsel" onchange="render()"></select></div>
+      <div class="ff"><label>Client Type</label><select id="fClientType" class="fsel" onchange="render()"></select></div>
+      <div class="ff not-log"><label>Deadline</label><select id="fUrgency" class="fsel not-log" onchange="render()">
+            <option value="">Semua deadline</option><option value="OVERDUE">⛔ Overdue</option><option value="THIS WEEK">⚠ This week / ASAP</option><option value="LATER">Later</option><option value="Selesai">✓ Submitted</option>
+          </select></div>
+    </div>
+    <label class="chk fchk not-log"><input type="checkbox" id="fNoGo" onchange="render()"> Tampilkan proyek berstatus "Not Go"</label>
+    <label class="chk fchk" id="fAsapW" style="display:none" title="ASAP = Target Submit belum ditentukan (TBD)"><input type="checkbox" id="fAsap" checked onchange="render()"> Tampilkan ASAP</label>
+  </div>
+  <footer><button class="btn" id="btnReset" onclick="resetFilters()" title="Hapus semua filter">↺ Atur ulang</button><span class="tsp"></span><button class="btn primary" onclick="closeModal('mFilter')">Terapkan Filter</button></footer>
+</div></div>
 <!-- CONFIRM MODAL -->
 <div class="modal-bg" id="mConfirm">
   <div class="modal sm">
@@ -3272,7 +3282,7 @@ function zoomStep(d){
   ZI = Math.max(0, Math.min(ZOOMS.length - 1, ZI + d));
   var z = ZOOMS[ZI];
   document.documentElement.style.zoom = z === 1 ? '' : z;
-  $('zoomVal').textContent = Math.round(z * 100) + '%';
+  $('zoomVal').textContent = Math.round(z * 100) + '%'; var zt = $('zoomTxt'); if(zt) zt.textContent = Math.round(z * 100) + '%';
   $('btnFsMinus').disabled = ZI === 0;
   $('btnFsPlus').disabled = ZI === ZOOMS.length - 1;
   $('zoomBtn').classList.toggle('changed', z !== 1);
@@ -3411,7 +3421,7 @@ function render(){
   ['fCategory','fPic','fDecision','fStatus','fClientType','fUrgency'].forEach(function(id){ var on = !!$(id).value && $(id).style.display !== 'none'; $(id).classList.toggle('on', on); if(on) nf++; if($(id)._sel) syncMsel(id); });
   if($('fNoGo').checked) nf++;
   if(S.rq && S.rq !== 'all') nf++;
-  $('filtCount').textContent = nf ? '(' + nf + ')' : '';
+  $('filtCount').textContent = nf ? String(nf) : '';
   var all = projects();
   renderSide(all);
   markNav();
@@ -3563,15 +3573,21 @@ document.addEventListener('click', function(e){
 /* ==================================================================
    TEMA & RINGKASAN (hero)
    ================================================================== */
-function getThemeMode(){ var m = document.documentElement.getAttribute('data-theme-mode'); if(!m){ try{ m = localStorage.getItem('rfq_theme'); }catch(e){} } return (m === 'light' || m === 'dark' || m === 'system') ? m : 'dark'; }
-function syncThemeSeg(m){ document.querySelectorAll('#themeSeg button').forEach(function(b){ var on = b.getAttribute('data-m') === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); }); }
+function getThemeMode(){ var m = document.documentElement.getAttribute('data-theme-mode'); if(!m){ try{ m = localStorage.getItem('rfq_theme'); }catch(e){} } return (m === 'light' || m === 'dark' || m === 'system') ? m : 'system'; }
+var THEME_ICO = {"system": "<svg class=\"v12-ic\" viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.6\"/><path d=\"M12 3.4a8.6 8.6 0 0 1 0 17.2z\" fill=\"currentColor\"/></svg>", "light": "<svg class=\"v12-ic\" viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4\"/></svg>", "dark": "<svg class=\"v12-ic\" viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z\"/></svg>"};
+function syncThemeSeg(m){
+  document.querySelectorAll('#themeMenu button').forEach(function(b){ var on = b.getAttribute('data-m') === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+  var ic = document.getElementById('themeIco'); if(ic) ic.innerHTML = THEME_ICO[m] || THEME_ICO.system;
+  var tb = document.getElementById('themeBtn'), nm = m === 'light' ? 'Terang' : m === 'dark' ? 'Gelap' : 'Sistem';
+  if(tb){ tb.title = 'Tema: ' + nm; tb.setAttribute('data-lbl', 'Tema: ' + nm); }
+}
 function setTheme(m){
-  if(m !== 'light' && m !== 'dark' && m !== 'system') m = 'dark';
+  if(m !== 'light' && m !== 'dark' && m !== 'system') m = 'system';
   try{ localStorage.setItem('rfq_theme', m); }catch(e){}
   if(window.__applyTheme) window.__applyTheme(m); else document.documentElement.setAttribute('data-theme', m === 'light' ? 'light' : 'dark');
   syncThemeSeg(m);
 }
-function pickTheme(m){ setTheme(m); try{ render(); }catch(e){} }
+function pickTheme(m){ setTheme(m); try{ closeHMenus(); }catch(e){} try{ render(); }catch(e){} }
 function toggleTheme(){ var o = ['system', 'light', 'dark']; pickTheme(o[(o.indexOf(getThemeMode()) + 1) % 3]); }
 window.addEventListener('themechange', function(){ try{ render(); }catch(e){} });   /* OS berganti terang/gelap saat mode Sistem */
 function toggleHero(){
@@ -3784,7 +3800,7 @@ function renderActive(all){
   $('tblActive').querySelectorAll('a.lnk').forEach(function(a){ a.onclick = function(){ openDetail(a.dataset.k); }; });
   S._active = rows;
   (function(){ var c = {'dn-go': 0, 'dn-uc': 0, 'dn-ng': 0}; rows.forEach(function(p){ var d = decChange(p); if(d && d.cls) c[d.cls]++; }); var tot = c['dn-go'] + c['dn-uc'] + c['dn-ng'], lg = $('decLeg');
-    if(lg){ lg.style.display = tot ? '' : 'none'; lg.innerHTML = '<b>Decision baru (' + DEC_NEW_DAYS + ' hari):</b> <i class="dn-go"></i>Go ' + c['dn-go'] + ' <i class="dn-uc"></i>Under Review ' + c['dn-uc'] + ' <i class="dn-ng"></i>Not Go ' + c['dn-ng']; } })();
+    if(lg){ lg.style.display = tot ? '' : 'none'; lg.innerHTML = '<b>Decision baru<small>' + DEC_NEW_DAYS + ' hari</small></b><span class="dn-c"><i class="dn-go"></i>Go <em>' + c['dn-go'] + '</em></span><span class="dn-c"><i class="dn-uc"></i>Under Review <em>' + c['dn-uc'] + '</em></span><span class="dn-c"><i class="dn-ng"></i>Not Go <em>' + c['dn-ng'] + '</em></span>'; } })();
   /* kartu untuk HP */
   var CMAX = 150;
   $('cardsActive').innerHTML = rows.length ? rows.slice(0, CMAX).map(function(p){
@@ -5497,7 +5513,7 @@ function openAgenda(arg){
   if(!AGF.ro) setTimeout(function(){ try{ (a ? $('agTitle') : $('agRfq')).focus(); }catch(e){} }, 120);
 }
 function agUpsert(o){ var l = S.agenda || [], i, f = false; for(i = 0; i < l.length; i++) if(l[i].id === o.id){ l[i] = o; f = true; } if(!f) l.push(o); S.agenda = l; }
-function agAfter(){ agBadge(); if(S.view === 'cal') renderCal(S._calAll || []); try{ agDecorate(); }catch(e){} try{ if($('mDetail').classList.contains('open') && AGF.detailKey) agDetailBlock(AGF.detailKey); }catch(e){} }
+function agAfter(){ agBadge(); if(S.view === 'cal') renderCal(S._calAll || []); try{ agDecorate(); }catch(e){} try{ window.agRemRefresh && agRemRefresh(); }catch(e){} try{ if($('mDetail').classList.contains('open') && AGF.detailKey) agDetailBlock(AGF.detailKey); }catch(e){} }
 function saveAgenda(){
   if(AGF.ro) return;
   var o = agRead();
@@ -5537,7 +5553,7 @@ function agBadge(){
 function loadAgenda(){
   return api('listAgenda').then(function(l){ S.agenda = Array.isArray(l) ? l : []; S.agMissing = false; })
     .catch(function(){ S.agMissing = true; })
-    .then(function(){ agBadge(); if(S.view === 'cal') renderCal(S._calAll || []); try{ agDecorate(); }catch(e){} });
+    .then(function(){ agBadge(); if(S.view === 'cal') renderCal(S._calAll || []); try{ agDecorate(); }catch(e){} try{ window.agRemRefresh && agRemRefresh(); }catch(e){} });
 }
 function agDetailBlock(k){
   var box = $('dBody'); if(!box) return;
@@ -6002,6 +6018,405 @@ html[data-theme=light] #bnav .bn-lens.lift .bn-lens-in{box-shadow:inset 0 0 0 1p
 })();
 </script>
 <!-- ===== AKHIR v21.11 ===== -->
+<!-- ===== v21.12: layar utama ringkas ===== -->
+<style>
+/* ============================================================
+   UI v21.12 — layar utama ringkas: header, ringkasan, pengingat ganda, baris decision, toolbar 1 baris
+   ============================================================ */
+
+/* ---- 0. umum: menu kecil (dropdown) yang dipakai header & toolbar ---- */
+.hmenu,.tbmenu{position:absolute;top:calc(100% + 8px);right:0;min-width:210px;padding:6px;border-radius:12px;display:none;z-index:70;
+  background:var(--fl-strong);border:1px solid var(--fl-bd);box-shadow:inset 0 1px 0 var(--fl-hi),0 22px 46px -20px rgba(0,0,0,.7);-webkit-backdrop-filter:var(--fl-blur);backdrop-filter:var(--fl-blur)}
+.hmenu.open,.tbmenu.open{display:block}
+.hmenu .mh,.tbmenu .mh{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--ink-3);padding:7px 10px 4px;text-transform:uppercase}
+.hmenu>button,.tbmenu>button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left}
+.hmenu>button:hover,.tbmenu>button:hover{background:var(--gl-bg2)}
+.hmenu>button.on,.tbmenu>button.on{background:var(--accent-soft);color:var(--accent);font-weight:650}
+.hmenu>button.on::after,.tbmenu>button.on::after{content:"✓";margin-left:auto;font-weight:700}
+.hmenu svg,.tbmenu svg,.v12-ic{flex:none;display:block}
+
+/* ---- 1. HEADER ringkas ---- */
+html[data-theme] .head{padding:8px 16px;gap:8px}
+.head .split,.head .zoomwrap,.head .themewrap{position:relative}
+.split{display:inline-flex;align-items:stretch;height:34px;border:1px solid var(--gl-bd);border-radius:10px;background:var(--gl-bg2)}
+.split .sp-main,.split .sp-car,.head .zoombtn,.head .themewrap .ibtn{border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:100%}
+.split .sp-main{padding:0 12px;border-radius:10px 0 0 10px}
+.split .sp-car{padding:0 9px;border-left:1px solid var(--gl-bd);border-radius:0 10px 10px 0;color:var(--ink-2)}
+.split.on .sp-car{color:var(--accent)}
+.split .sp-main:hover,.split .sp-car:hover,.head .zoombtn:hover,.head .themewrap .ibtn:hover{background:var(--gl-bg2)}
+.head .zoombtn{height:34px;padding:0 10px;border:1px solid var(--gl-bd);border-radius:10px;background:var(--gl-bg2);width:auto}
+.head .zoombtn.changed{color:var(--accent);border-color:var(--accent)}
+.head .themewrap .ibtn{width:34px;height:34px;justify-content:center;border:1px solid var(--gl-bd);border-radius:10px;background:var(--gl-bg2)}
+.head .autoref,.hctl .autoref{display:none!important}
+html[data-theme] .head #btnNew{height:34px;border-radius:10px;padding:0 14px;font-weight:650;display:inline-flex;align-items:center;gap:6px}
+html[data-theme] .head .zoompop{top:calc(100% + 8px);right:0;left:auto;width:240px;padding:12px;flex-direction:column;align-items:stretch;gap:10px}
+.zoompop .zh{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase}
+.zoompop .zr{border:0;background:none;color:var(--accent);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer;letter-spacing:0;text-transform:none}
+.zoompop .zrow{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--gl-bd);border-radius:10px;padding:4px;background:var(--gl-bg2)}
+.zoompop .zrow .zb{width:40px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--ink);font-size:18px;line-height:1;cursor:pointer}
+.zoompop .zrow .zb:hover{background:var(--gl-bg2)}
+.zoompop .zrow b{font-size:14px}
+
+/* ---- 2. RINGKASAN: 6 bar kecil + donat, satu tombol sembunyi ---- */
+.hero.closed .hero-wid{display:none}   /* dropdown Ringkasan = donat saja; 6 bar selalu tampil */
+html[data-theme] .hero{margin-bottom:8px}
+html[data-theme] .hero-top{margin-bottom:8px;align-items:center}
+html[data-theme] .hero h2{font-size:1.02em;font-weight:700}
+html[data-theme] .content .tiles{gap:8px;margin:0;padding:0}
+html[data-theme] .content .tiles .tile{padding:7px 12px 8px;row-gap:0;border-radius:12px;min-height:0}
+html[data-theme] .content .tiles .tile .tl{font-size:11.5px}
+html[data-theme] .content .tiles .tile .tn{font-size:22px;margin:1px 0 0;line-height:1.05}
+html[data-theme] .content .tiles .tile .ts{display:none}
+html[data-theme] .hero-wid{margin-top:8px}
+html[data-theme] .dgrid{gap:8px}
+html[data-theme] .dgrid .wcard{padding:10px 12px}
+
+/* ---- 3. PENGINGAT: dua kotak sebaris ---- */
+.rem-row{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px}
+body[data-view=active] .rem-row{display:grid}
+.rem-row .hero-rem{margin:0;position:relative}
+.rem-row .rt-short{display:none}
+.hero-rem .rem-main em{white-space:nowrap}
+#agRemBox .rem-main em{color:#7aa7ff}
+html[data-theme=light] #agRemBox .rem-main em{color:#2358c4}
+#agRemBox .bell i{background:#4c8dff;color:#fff}
+#agRemBox.empty .bell i{background:#8e8e93}
+#agRemBox .car{border-left-color:rgba(76,141,255,.35)}
+#agRemBox.open .car{background:rgba(76,141,255,.18)}
+html[data-theme] #agRemBox.has-soon{background:rgba(76,141,255,.12)!important;box-shadow:inset 0 0 0 1px rgba(76,141,255,.38)!important}
+html[data-theme] #agRemBox.empty{background:var(--card)!important;box-shadow:none!important}
+html[data-theme] #remBox.open .rem,html[data-theme] #agRemBox.open .rem{background:var(--fl-strong);border:1px solid var(--fl-bd);box-shadow:inset 0 1px 0 var(--fl-hi),0 24px 50px -22px rgba(0,0,0,.75);-webkit-backdrop-filter:var(--fl-blur);backdrop-filter:var(--fl-blur)}
+.hero-rem.open .rem{z-index:65}
+.hero-rem .rem .ri .rt small{display:block;font-weight:400;opacity:.7;font-size:11.5px;overflow:hidden;text-overflow:ellipsis}
+.hero-rem .rem .rchip.ag{background:rgba(76,141,255,.18);color:#8fb4ff}
+html[data-theme=light] .hero-rem .rem .rchip.ag{color:#2d5fc9}
+.hero-rem.empty .car{display:none}
+
+/* ---- 4. baris DECISION baru: ringkas ---- */
+.dec-row{display:none;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 8px;min-height:22px;font-size:12px;color:var(--ink-2)}
+body[data-view=active] .dec-row{display:flex}
+.dec-row .tsp{flex:1}
+.dec-row .dn-leg{display:inline-flex!important;align-items:center;gap:4px 12px;font-size:12px;flex-wrap:wrap}
+.dec-row .dn-leg b{font-weight:650;color:var(--ink-2)}
+.dec-row .dn-leg b small{font-weight:500;color:var(--ink-3);margin-left:4px}
+.dec-row .dn-c{display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
+.dec-row .dn-c em{font-style:normal;font-weight:700}
+.dec-row .dn-leg i{width:8px;height:8px;border-radius:50%;margin:0}
+.dec-row .btn.sm{height:24px;padding:0 10px;font-size:11.5px;border-radius:999px}
+.dec-row #btnNeedT{display:none!important}
+
+/* ---- 5. TOOLBAR 1 baris: cari · rentang · filter · urut · export ---- */
+html[data-theme] .content .filters.tb1{display:flex;flex-direction:row;align-items:center;flex-wrap:nowrap;gap:8px;padding:0;background:transparent;border:0;box-shadow:none;margin:0 0 10px;position:relative;-webkit-backdrop-filter:none;backdrop-filter:none}
+.tb1 .search{flex:1 1 220px;min-width:0;height:36px;border-radius:10px}
+html[data-theme] .tb1 .search{background:var(--gl-bg2);border:1px solid var(--gl-bd);border-radius:10px}
+.tb1 .search input{padding:0}
+.tb1 .rng{position:relative;display:inline-flex;align-items:stretch;height:36px;border:1px solid var(--gl-bd);border-radius:10px;background:var(--gl-bg2);flex:none}
+.tb1 .rng button.rng-b,.tb1 .rng button.rng-r{border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:0 11px;white-space:nowrap}
+.tb1 .rng button.rng-b{border-radius:10px 0 0 10px;border-right:1px solid var(--gl-bd);color:var(--ink-2)}
+.tb1 .rng button.rng-r{border-radius:0 10px 10px 0;color:var(--accent)}
+.tb1 .rng.active button.rng-r{background:var(--accent-soft)}
+.tb1 .rng .hp-only,.tbmenu .hp-only{display:none}
+.tb1 .rng #rangeBasis{display:none}
+.tb1 .tbbtn{height:36px;border-radius:10px;padding:0 12px;border:1px solid var(--gl-bd);background:var(--gl-bg2);color:var(--ink);font:inherit;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;flex:none}
+.tb1 .tbbtn:hover{background:var(--gl-bg2);border-color:var(--ink-3)}
+.tb1 .tbbtn.has{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.tb1 .fcnt:not(:empty){background:var(--accent);color:#fff;border-radius:99px;padding:0 6px;font-size:11px;line-height:17px;font-weight:700;min-width:17px;text-align:center}
+.tb1 .sortw{position:relative;flex:none}
+.tb1 .tbmenu{min-width:220px}
+.tb1 .rng .tbmenu{left:0;right:auto}
+.tb1 .sortw .tbmenu{right:0}
+.tbmenu .seg.pills{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:none;border:0;padding:2px 4px;border-radius:0;box-shadow:none}
+.tbmenu .seg.pills button{border-radius:8px;padding:8px 10px;font-size:13px;text-align:left;justify-content:flex-start;background:transparent;border:0;color:var(--ink)}
+.tbmenu .seg.pills button:hover{background:var(--gl-bg2)}
+.tbmenu .seg.pills button.on{background:var(--accent-soft);color:var(--accent);font-weight:650}
+.tbmenu #customWrap{padding:2px 6px 6px}
+.tbmenu #customWrap .custom-range{display:flex!important;align-items:center;gap:6px;margin:4px 0 8px}
+.tbmenu #customWrap input[type=date]{flex:1;min-width:0;height:34px;border-radius:8px;border:1px solid var(--gl-bd);background:var(--gl-bg2);color:var(--ink);padding:0 8px;font:inherit;font-size:12.5px}
+.tbmenu #customWrap .btn{width:100%;justify-content:center}
+body:not([data-view=active]) [data-onlyview=active]{display:none}
+
+/* ---- 6. MODAL FILTER ---- */
+.fmodal{max-width:520px}
+.fmodal .fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fmodal .ff>label{display:block;font-size:12px;color:var(--ink-3);font-weight:600;margin:0 0 5px}   /* hanya judul kolom; label pilihan di dalam daftar tidak ikut */
+.fmodal .ff .fsel,.fmodal .ff .msel,.fmodal .ff .msel .fsel{width:100%;max-width:none;box-sizing:border-box}
+.fmodal .ff .msel .fsel,.fmodal .ff>select.fsel{height:38px;border-radius:10px;padding:0 30px 0 12px;text-align:left}
+.fmodal .ff>select.fsel{height:38px!important;min-height:38px;box-sizing:border-box;appearance:none;-webkit-appearance:none;background-color:var(--gl-bg2);border:1px solid var(--gl-bd);color:var(--ink-2);font:inherit;font-size:.92em;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 17px) 52%,calc(100% - 12px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.fmodal .ff .msel .fsel{background-color:var(--gl-bg2);border:1px solid var(--gl-bd)}
+.fmodal .fgrid{gap:10px 12px}
+.fmodal .ff .msel .fsel,.fmodal .ff>select.fsel{font-weight:600;font-size:13px;color:var(--ink)}
+.fmodal .ff>select.fsel{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='%23b9c2d3'/></svg>");background-position:right 13px center;background-size:9px 6px}
+html[data-theme=light] .fmodal .ff>select.fsel{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='%235b6577'/></svg>")}
+/* daftar pilihan: melayang di atas isi (tidak mendorong tata letak); kolom kanan rata kanan; baris bawah membuka ke atas */
+.fmodal .msel.open .mpop{position:absolute;top:calc(100% + 6px);left:0;width:max(100%,280px);min-width:0;max-width:340px;max-height:236px;margin:0;padding:6px;z-index:30;box-shadow:inset 0 1px 0 var(--fl-hi),0 22px 46px -18px rgba(0,0,0,.7);background:var(--fl-strong);border:1px solid var(--fl-bd)}
+.fmodal .ff:nth-child(even) .msel.open .mpop{left:auto;right:0}
+.fmodal .msel.open .mpop.up{top:auto;bottom:calc(100% + 6px)}   /* dibalik ke atas oleh JS bila ruang di bawah kurang */
+.fmodal .mpop .mclr{position:sticky;top:-6px;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 8px 8px;margin:-6px -6px 4px;background:var(--fl-strong);border-bottom:1px solid var(--gl-bd);font-size:12px;white-space:nowrap}
+.fmodal .mpop .mclr .mcnt{color:var(--ink-3);overflow:hidden;text-overflow:ellipsis}
+.fmodal .mpop .mclr button{flex:none;white-space:nowrap}
+.fmodal .mpop label.mi{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;font-size:13px;line-height:1.3;white-space:normal;cursor:pointer;color:var(--ink);font-weight:500}
+.fmodal .mpop label.mi input{flex:none;width:16px;height:16px;margin:0}
+.fmodal .mpop label.mi span{flex:1;min-width:0}
+@media (min-width:801px) and (min-height:640px){ .fmodal .body{overflow:visible} }
+@media (max-width:800px), (max-height:639px){     /* HP / layar pendek: daftar membuka di tempat (akordeon) */
+  .fmodal .msel.open .mpop,.fmodal .ff:nth-child(even) .msel.open .mpop,.fmodal .msel.open .mpop.up{position:static;width:100%;max-width:none;max-height:220px;margin:6px 0 0;box-shadow:none;background:var(--gl-bg2)}
+  .fmodal .mpop .mclr{background:transparent}
+}
+@media (max-width:800px){ .fmodal .ff .msel .fsel,.fmodal .ff>select.fsel{font-size:16px} }   /* 16px: cegah zoom otomatis iPhone; semua kotak seragam */
+.fmodal .fchk{display:flex;align-items:center;gap:9px;margin-top:14px;padding:10px 12px;border:1px solid var(--gl-bd);border-radius:10px;background:var(--gl-bg2);font-size:13px;cursor:pointer}
+.fmodal .fchk input{width:16px;height:16px}
+.fmodal footer .tsp{flex:1}
+.fmodal header h2{display:flex;align-items:center;gap:9px;font-size:15px}
+
+/* ---- 7. HP ---- */
+@media (max-width:800px){
+  /* header: menu ⋯ memuat kontrol bertumpuk */
+  html[data-theme] .hctl.open{width:min(330px,calc(100vw - 20px));box-sizing:border-box;background:color-mix(in srgb,var(--card) 96%,transparent)}
+  .hctl.open .split{width:100%;flex-wrap:wrap;height:auto;min-height:34px}
+  .hctl.open .split .sp-main,.hctl.open .split .sp-car{min-height:34px}
+  .hctl.open .split .sp-main{border-radius:10px 0 0 10px}
+  .hctl.open .split .sp-car{margin-left:auto}
+  .hctl.open .split .hmenu{flex:0 0 100%;box-sizing:border-box;margin:0 0 6px}
+  .hctl.open .split .sp-main{flex:1;justify-content:flex-start}
+  .hctl.open .zoomwrap,.hctl.open .themewrap{width:100%}
+  .hctl.open .head .zoombtn,.hctl.open .zoombtn{width:100%;justify-content:space-between}
+  .hctl.open .themewrap .ibtn{width:100%;justify-content:flex-start;padding:0 12px;gap:9px}
+  .hctl.open .themewrap .ibtn::after{content:attr(data-lbl);font-size:13px;font-weight:600}
+  .hctl.open .hmenu{position:static;width:100%;min-width:0;margin-top:6px;box-shadow:none;background:var(--gl-bg2)}
+  .hctl.open .zoompop{position:static;width:auto;margin-top:6px;box-shadow:none}
+  /* ringkasan: 6 bar kecil 3×2 */
+  html[data-theme] .content .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;gap:6px}
+  html[data-theme] .content .tiles .tile{flex:none;padding:6px 9px 7px;border-radius:11px}
+  html[data-theme] .content .tiles .tile .tl{font-size:10.5px;line-height:1.15;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  html[data-theme] .content .tiles .tile .tn{font-size:19px}
+  html[data-theme] .dgrid{display:flex;align-items:flex-start;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px}
+  html[data-theme] .dgrid .wcard{flex:0 0 84%;scroll-snap-align:start}
+  html[data-theme] .hero-top>div{gap:6px}
+  html[data-theme] .hero-sub{font-size:.8em}
+  /* pengingat: dua kotak kecil; popup selebar baris */
+  .rem-row{position:relative;gap:6px}
+  .rem-row .hero-rem{position:static}
+  .rem-row .rt-hi,.rem-row .rt-long,.rem-row .rem-main em{display:none}
+  .rem-row .rt-short{display:inline;font-weight:700}
+  .hero-rem .rem-bar{min-height:40px}
+  .hero-rem .rem-main{padding-left:8px;gap:7px}
+  .hero-rem .car{width:34px}
+  /* decision: ringkas */
+  .dec-row{gap:4px 8px;font-size:11.5px}
+  .dec-row .dn-leg{gap:3px 10px}
+  html[data-theme] .content .filters.tb1{gap:6px}
+  .fmodal .fgrid{grid-template-columns:1fr 1fr;gap:10px}
+}
+@media (max-width:420px){ .fmodal .fgrid{grid-template-columns:1fr} }
+
+/* ---- 8. TOOLBAR responsif: mengikuti LEBAR TOOLBAR (bukan jendela) — aman untuk preview sempit, skala tampilan besar, sidebar tersemat ---- */
+.tb1{container-type:inline-size;container-name:tb}
+.tb1 .search{overflow:hidden;min-width:150px}
+.tb1 .search input{min-width:0;width:100%;flex:1}
+.tb1 .search input::placeholder{text-overflow:ellipsis}
+@container tb (max-width:880px){      /* menengah: ikon saja untuk Export & acuan rentang */
+  .tb1 #btnExport .lbl{display:none}
+  .tb1 #btnExport{padding:0 11px}
+  .tb1 .rng button.rng-b .lbl{display:none}
+  .tb1 .rng button.rng-b{padding:0 10px}
+}
+@container tb (max-width:660px){      /* sempit / HP: satu baris ikon */
+  .tb1 .search{flex:1 1 90px;height:38px;padding:0 10px;gap:6px}
+  .tb1 .search input{min-width:0;width:100%}
+  .tb1 .tbbtn,.tb1 .rng{height:38px}
+  .tb1 .tbbtn .lbl{display:none}
+  .tb1 .tbbtn{width:38px;padding:0;justify-content:center;position:relative}
+  .tb1 .tbbtn .fcnt{position:absolute;top:-5px;right:-5px}
+  .tb1 .tbbtn#sortBtn svg.chev{display:none}
+  .tb1 .rng{width:38px}
+  .tb1 .rng button.rng-b{display:none}
+  .tb1 .rng button.rng-r{width:38px;padding:0;justify-content:center;border-radius:10px}
+  .tb1 .rng button.rng-r .lbl,.tb1 .rng button.rng-r svg.chev{display:none}
+  .tb1 .rng .hp-only,.tbmenu .hp-only{display:block}
+  .tb1 .rng button.rng-r .hp-only{display:inline-flex}
+  .tb1 .rng,.tb1 .sortw{position:static}
+  .tb1 .tbmenu,.tb1 .rng .tbmenu,.tb1 .sortw .tbmenu{left:0;right:0;top:calc(100% + 6px);min-width:0;width:auto}
+  .tbmenu .bas-hp{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:2px 4px 6px}
+  .tbmenu .bas-hp button{display:flex;align-items:center;gap:7px;border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;padding:8px 10px;border-radius:8px}
+  .tbmenu .bas-hp button.on{background:var(--accent-soft);color:var(--accent);font-weight:650}
+}
+</style>
+<script>
+window.__ICO_INBOX = "<svg class=\"v12-ic\" viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.5 13h4.5l1.5 2.5h5L16 13h4.5\"/><path d=\"M6 5h12l2.5 8v6.5h-17V13z\"/></svg>"; window.__ICO_SEND = "<svg class=\"v12-ic\" viewBox=\"0 0 24 24\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 3 10.5 13.5\"/><path d=\"M21 3l-6.5 18-4-8.5L2 8.5z\"/></svg>";
+/* UI v21.12: header ringkas, toolbar 1 baris (rentang · filter · urut), pengingat kegiatan */
+(function(){
+  try{
+    function G(id){ return document.getElementById(id); }
+
+    /* ---------- menu kecil (header & toolbar) ---------- */
+    window.closeHMenus = function(except){
+      document.querySelectorAll('.hmenu.open').forEach(function(m){ if(m.id !== except) m.classList.remove('open'); });
+      var zp = G('zoomPop'); if(zp && except !== 'zoomPop') zp.classList.remove('open');
+    };
+    window.closeTb = function(except){
+      document.querySelectorAll('.tbmenu.open').forEach(function(m){ if(m.id !== except) m.classList.remove('open'); });
+    };
+    window.toggleHMenu = function(id, e){
+      if(e) e.stopPropagation();
+      var m = G(id), was = m.classList.contains('open');
+      closeHMenus(); closeTb();
+      if(!was){ m.classList.add('open'); if(id === 'autoMenu') syncAutoMenu(); }
+    };
+    window.toggleTb = function(id, e){
+      if(e) e.stopPropagation();
+      var m = G(id), was = m.classList.contains('open');
+      closeTb(); closeHMenus();
+      document.querySelectorAll('.msel.open').forEach(function(x){ x.classList.remove('open'); });
+      var ag = G('agRemBox'), rb = G('remBox'); if(ag) ag.classList.remove('open'); if(rb) rb.classList.remove('open');
+      if(!was) m.classList.add('open');
+    };
+    document.addEventListener('click', function(){ closeHMenus(); closeTb(); });
+    document.addEventListener('keydown', function(e){
+      if(e.key !== 'Escape') return;
+      closeHMenus(); closeTb();
+      var f = G('mFilter'); if(f && f.classList.contains('open')) closeModal('mFilter');
+      var ag = G('agRemBox'); if(ag) ag.classList.remove('open');
+    });
+
+    /* ---------- Muat ulang ▾ : auto refresh ---------- */
+    window.syncAutoMenu = function(){
+      var cur = (window.S && S.autoMin != null) ? +S.autoMin : +((G('autoSel') || {}).value || 0);
+      document.querySelectorAll('#autoMenu button').forEach(function(b){ b.classList.toggle('on', +b.dataset.v === cur); });
+      var sp = G('reloadSplit'); if(sp) sp.classList.toggle('on', cur > 0);
+    };
+    if(typeof window.setAuto === 'function'){
+      var _setAuto = window.setAuto;
+      window.setAuto = function(min){ var r = _setAuto.apply(this, arguments); try{ syncAutoMenu(); }catch(e){} return r; };
+    }
+    G('autoMenu').addEventListener('click', function(e){ var b = e.target.closest('button'); if(!b) return; setAuto(+b.dataset.v); closeHMenus(); });
+
+    /* ---------- skala tampilan ---------- */
+    if(typeof window.toggleZoomPop === 'function'){
+      var _tz = window.toggleZoomPop;
+      window.toggleZoomPop = function(e){ closeHMenus('zoomPop'); closeTb(); return _tz.apply(this, arguments); };
+    }
+
+    /* ---------- rentang waktu ---------- */
+    var RQL = {today: 'Hari ini', yesterday: 'Kemarin', tomorrow: 'Besok', lastweek: 'Minggu lalu', week: 'Minggu ini', nextweek: 'Minggu depan', month: 'Bulan ini', all: 'Semua', custom: 'Kustom'};
+    window.syncRng = function(){
+      var rb = G('rangeBasis'), sub = rb && rb.value === 'submission', q = (window.S && S.rq) || 'all', txt = RQL[q] || 'Semua';
+      G('rngBasisTxt').textContent = sub ? 'Target Submit' : 'Date Received';
+      var bi = G('rngBasisIco'); if(bi) bi.innerHTML = sub ? window.__ICO_SEND : window.__ICO_INBOX;
+      if(q === 'custom'){
+        var f = G('rFrom').value, t = G('rTo').value, d = function(v){ return v ? v.slice(8, 10) + '/' + v.slice(5, 7) : '…'; };
+        txt = (f || t) ? d(f) + ' – ' + d(t) : 'Kustom';
+      }
+      G('rngRangeTxt').textContent = txt;
+      document.querySelectorAll('#rngBasisMenu button,#rngRangeMenu .bas-hp button').forEach(function(b){ b.classList.toggle('on', (b.dataset.b === 'submission') === !!sub); });
+      G('rngBox').classList.toggle('active', q !== 'all');
+      var cw = G('customWrap'); if(cw) cw.style.display = q === 'custom' ? '' : 'none';
+    };
+    if(typeof window.syncRangeUI === 'function'){
+      var _sru = window.syncRangeUI;
+      window.syncRangeUI = function(){ var r = _sru.apply(this, arguments); try{ syncRng(); }catch(e){} return r; };
+    }
+    function setBasis(v){ var s = G('rangeBasis'); if(s.value !== v){ s.value = v; onBasisChange(); } closeTb(); }
+    ['rngBasisMenu', 'rngRangeMenu'].forEach(function(id){ G(id).addEventListener('click', function(e){ var b = e.target.closest('[data-b]'); if(b) setBasis(b.dataset.b); }); });   /* di elemen menu sendiri: menu menghentikan gelembung klik */
+    G('quickR').addEventListener('click', function(e){ var b = e.target.closest('button'); if(b && b.dataset.q && b.dataset.q !== 'custom') closeTb(); });
+    ['rFrom', 'rTo'].forEach(function(id){ G(id).addEventListener('change', function(){ try{ syncRng(); }catch(e){} }); });
+
+    /* ---------- urutkan ---------- */
+    var SORTL = {received: 'RFQ terbaru', deadline: 'Deadline terdekat', lastsub: 'Submit terakhir'};
+    window.syncSortBtn = function(){
+      var b = document.querySelector('#sortMode button.on'), t = G('sortTxt');
+      if(t) t.textContent = b ? (SORTL[b.dataset.m] || 'Urutkan') : 'Urut kolom';
+    };
+    if(typeof window.markSortMode === 'function'){
+      var _msm = window.markSortMode;
+      window.markSortMode = function(){ var r = _msm.apply(this, arguments); try{ syncSortBtn(); }catch(e){} return r; };
+    }
+    G('sortMode').addEventListener('click', function(e){ if(e.target.closest('button')) closeTb(); });
+    (function(){ var sm = G('sortMode'); sm.classList.remove('has-gi', 'seg'); var gi = sm.querySelector(':scope>.gi'); if(gi) gi.remove(); })();   /* lensa lama tidak dipakai di menu urut */
+
+    /* ---------- filter (modal) ---------- */
+    window.openFilterModal = function(){ closeTb(); closeHMenus(); openModal('mFilter'); };
+
+    /* ---------- modal filter: tinggi daftar pilihan mengikuti sisa ruang di modal ---------- */
+    function fitMpop(){
+      var w = document.querySelector('#mFilter .msel.open'); if(!w) return;
+      var p = w.querySelector('.mpop'); p.style.maxHeight = ''; p.classList.remove('up');
+      if(!matchMedia('(min-width:801px) and (min-height:640px)').matches) return;
+      var m = document.querySelector('#mFilter .modal').getBoundingClientRect(), b = w.getBoundingClientRect();
+      var below = m.bottom - b.bottom - 14, above = b.top - m.top - 64;
+      if(below >= 200) p.style.maxHeight = Math.min(236, below) + 'px';
+      else if(above > below){ p.classList.add('up'); p.style.maxHeight = Math.max(120, Math.min(236, above)) + 'px'; }
+      else p.style.maxHeight = Math.max(120, below) + 'px';
+    }
+    G('mFilter').addEventListener('click', function(){ setTimeout(fitMpop, 0); }, true);   /* fase capture: tombol daftar memanggil stopPropagation */
+
+    /* ---------- hook render ---------- */
+    function postRender(){
+      syncRng(); syncSortBtn();
+      var n = G('filtCount'), has = !!(n && n.textContent.trim());
+      var fb = G('btnFilt'); if(fb) fb.classList.toggle('has', has);
+      var rm = G('btnResetMini'); if(rm) rm.style.display = has ? '' : 'none';
+      agRemRefresh();
+    }
+    if(typeof window.render === 'function'){
+      var _render = window.render;
+      window.render = function(){
+        try{ document.body.setAttribute('data-view', (window.S && S.view) || 'active'); }catch(e){}
+        var r = _render.apply(this, arguments);
+        try{ postRender(); }catch(e){}
+        return r;
+      };
+    }
+
+    /* ---------- pengingat kegiatan (agenda) ---------- */
+    var AGMON = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    function todayStr(){ return (window.S && S.today) || ymd(new Date()); }
+    function agRemItems(){
+      var td = todayStr(), lim = cAdd(td, 7);
+      return ((window.S && S.agenda) || []).filter(function(a){ return a && a.status === 'Terjadwal' && a.date >= td && a.date <= lim; })
+        .sort(function(a, b){ var x = a.date + (a.start || '99:99'), y = b.date + (b.start || '99:99'); return x < y ? -1 : x > y ? 1 : 0; });
+    }
+    function agDays(a, td){ return Math.round((toDate(a.date) - toDate(td)) / 864e5); }
+    window.agRemRefresh = function(){
+      var box = G('agRemBox'); if(!box) return;
+      var items = []; try{ items = agRemItems(); }catch(e){}
+      var td = todayStr();
+      G('agRemBadge').textContent = items.length;
+      box.classList.toggle('empty', !items.length);
+      box.classList.toggle('has-soon', items.some(function(a){ return agDays(a, td) <= 1; }));
+      var w = G('agWRem');
+      if(items.length){
+        w.innerHTML = '<div class="rem-h">Kegiatan 7 hari ke depan · ' + items.length + '</div>' + items.slice(0, 12).map(function(a){
+          var T = (window.AG_TYPES && (AG_TYPES[a.type] || AG_TYPES.lain)) || {i: '📌', l: 'Agenda'}, d = toDate(a.date), dd = agDays(a, td);
+          var sm = [a.start ? cTm(a.start) + (a.end ? '–' + cTm(a.end) : '') : '', a.place ? cShort(a.place, 40) : '', a.pic ? 'PIC ' + a.pic : ''].filter(Boolean).join(' · ');
+          return '<div class="ri" data-ag="' + esc(a.id) + '" title="' + esc(T.l + ' — ' + a.title) + '"><span class="rdt">' + d.getDate() + ' ' + AGMON[d.getMonth()] + '</span><span class="rt">' + T.i + ' ' + esc(a.title) + (sm ? '<small>' + esc(sm) + '</small>' : '') + '</span><span class="rchip ag">' + (dd <= 0 ? 'hari ini' : dd === 1 ? 'besok' : dd + ' hari') + '</span></div>';
+        }).join('') + '<div class="rmore" id="agRemMore">Buka Kalender ›</div>';
+        w.querySelectorAll('.ri').forEach(function(el){ el.onclick = function(ev){ ev.stopPropagation(); box.classList.remove('open'); openAgenda(el.dataset.ag); }; });
+        var mo = G('agRemMore'); if(mo) mo.onclick = function(ev){ ev.stopPropagation(); box.classList.remove('open'); var b = document.querySelector('#nav button[data-view="cal"]'); if(b) b.click(); };
+      } else { w.innerHTML = ''; box.classList.remove('open'); }
+    };
+    window.toggleAgRem = function(e){
+      if(e) e.stopPropagation();
+      var b = G('agRemBox'); if(b.classList.contains('empty')) return;
+      var was = b.classList.contains('open'), rb = G('remBox'); if(rb) rb.classList.remove('open');
+      closeHMenus(); closeTb(); b.classList.toggle('open', !was);
+    };
+    document.addEventListener('click', function(e){ var b = G('agRemBox'); if(b && b.classList.contains('open') && !b.contains(e.target)) b.classList.remove('open'); });
+    if(typeof window.toggleRem === 'function'){
+      var _tr = window.toggleRem;
+      window.toggleRem = function(e){ var ag = G('agRemBox'); if(ag) ag.classList.remove('open'); closeHMenus(); closeTb(); return _tr.apply(this, arguments); };
+    }
+    setInterval(function(){ try{ agRemRefresh(); }catch(e){} }, 60000);
+
+    /* ---------- keadaan awal ---------- */
+    try{ document.body.setAttribute('data-view', (window.S && S.view) || 'active'); }catch(e){}   /* render pertama bisa terjadi sebelum hook ini terpasang (mis. demo) */
+    try{ var zv = G('zoomVal'), zt = G('zoomTxt'); if(zv && zt) zt.textContent = zv.textContent; }catch(e){}
+    syncRng(); syncSortBtn(); syncAutoMenu(); agRemRefresh();
+    [300, 1200].forEach(function(ms){ setTimeout(function(){ try{ syncAutoMenu(); syncRng(); syncSortBtn(); agRemRefresh(); }catch(e){} }, ms); });
+  }catch(err){ try{ window.__v23Err = String(err); }catch(e2){} }
+})();
+</script>
+<!-- ===== AKHIR v21.12 ===== -->
 <!-- ===== PATCH HAPTIC TOUCH v21.10.1 — tempel TEPAT DI ATAS </body> ===== -->
 <style>
 /* Patch Haptic Touch v21.10 — tanpa seleksi teks; geser-lalu-lepas pada item */

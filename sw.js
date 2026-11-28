@@ -1,5 +1,5 @@
 /* Service worker — Proposal Logbook. Naikkan VERSION setiap rilis agar cache lama dibuang. */
-var VERSION = 'logbook-v21-11';
+var VERSION = 'logbook-v21-14';
 var SHELL = [
   './', 'index.html', 'offline.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-64.png',
