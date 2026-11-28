@@ -5766,5 +5766,191 @@ function agDecorate(){
   }catch(err){ try{ window.__ui21Err = String(err); }catch(e2){} }
 })();
 </script>
+<!-- ===== PATCH HAPTIC TOUCH v21.10.1 — tempel TEPAT DI ATAS </body> ===== -->
+<style>
+/* Patch Haptic Touch v21.10 — tanpa seleksi teks; geser-lalu-lepas pada item */
+.hp-ov,.hp-ov *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html.hp-lock,html.hp-lock body{overflow:hidden!important;overscroll-behavior:none!important}
+.hp-it.hot{background:rgba(255,255,255,.14)}
+html[data-theme=light] .hp-it.hot{background:rgba(15,23,42,.09)}
+.hp-it.hot.danger{background:var(--critical-bg)}
+@media (pointer:coarse){
+  .rc,.kc,.cl-row,.cl-i,.ag-di,#tblActive tr,#tblLog tr{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+  .rc a,#tblActive a,#tblLog a{-webkit-touch-callout:none}
+}
+</style>
+<script>
+/* ===== PATCH Haptic Touch v21.10.1 =====
+   Menggantikan modul tekan-tahan yang lama (jika ada) tanpa perlu menghapus apa pun:
+   - teks tidak ikut terpilih saat menahan (tanpa pegangan biru / Copy / Look Up)
+   - tahan -> geser -> lepas di atas item = aksi langsung jalan (seperti iOS)
+   - "+ Agenda" dari detail RFQ / menu cepat selalu mengisi RFQ & PIC otomatis
+   Aman dipasang di atas versi apa pun: bila fungsi yang dibutuhkan tidak ada, patch diam saja. */
+(function(){
+  try{
+    if(window.__hpPatch) return;
+    var need = ['projects','openDetail','openAgenda','openForm','agToggle','agMove','agAfter','agGcal','api','toast','can','esc','t','fmtS','fmtD','isDate','ymd','cFmt','cTm','cShort','cAdd','tenderLabel'];
+    for(var q = 0; q < need.length; q++) if(typeof window[need[q]] !== 'function'){ window.__hpPatchMissing = need[q]; return; }
+    if(typeof AG_TYPES === 'undefined' || typeof S === 'undefined') return;
+    window.__hpPatch = 1;
+    /* daftar project selalu siap untuk form agenda, walau Kalender belum pernah dibuka */
+    if(typeof applyData === 'function' && !window.__hpAD){ window.__hpAD = 1; var _ad = applyData; applyData = function(d){ var r = _ad(d); try{ S._calAll = projects(); }catch(e){} return r; }; try{ S._calAll = projects(); }catch(e){} }
+    var HOLD = 440, MOVE = 9;
+    var SEL = '#cardsActive .rc[data-k],#cardsLog .rc[data-k],#tblActive tbody tr,#tblLog tbody tr,[data-ag].cl-row,[data-ag].kc,[data-ag].cl-i,.ag-di[data-ag],.cl-row.dl[data-k],.kc.dl[data-k],.cl-i.dl[data-k]';
+    var st = null, suppress = 0, hpOpen = false, openedAt = 0, ov = null, armTimer = null, hot = null, curItems = [], touchMode = false;
+
+    function keyOfEl(el){
+      var a = el.matches && el.matches('tr') ? el.querySelector('a.lnk[data-k]') : null;
+      return a ? a.dataset.k : (el.dataset ? el.dataset.k : '');
+    }
+    function infoOf(el){
+      var ag = el.closest('[data-ag]'); if(ag && ag.dataset.ag) return {kind: 'ag', id: ag.dataset.ag};
+      var k = keyOfEl(el); return k ? {kind: 'rfq', key: k} : null;
+    }
+    function projOf(k){ var l = []; try{ l = projects(); }catch(e){} for(var i = 0; i < l.length; i++) if(l[i].key === k) return l[i]; return null; }
+    function agOf(id){ var l = S.agenda || [], i; for(i = 0; i < l.length; i++) if(l[i].id === id) return l[i]; return null; }
+    function ed(){ try{ return can('editor'); }catch(e){ return false; } }
+    function copyText(txt, msg){
+      function done(){ toast(msg || 'Disalin'); }
+      function fb(){ try{ var ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(ta); ta.select(); var ok = document.execCommand('copy'); document.body.removeChild(ta); ok ? done() : toast('Tidak bisa menyalin otomatis', true); }catch(e){ toast('Tidak bisa menyalin otomatis', true); } }
+      try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fb); else fb(); }catch(e){ fb(); }
+    }
+
+    function build(info){
+      var card = '', items = [], tc = '#4c8dff', i;
+      if(info.kind === 'rfq'){
+        var p = projOf(info.key); if(!p) return null;
+        var dec = t(p.decision), du = t(p.daysTxt);
+        card = '<div class="hp-t">' + esc(t(p.title)) + '</div><div class="hp-s">' + esc(t(p.client)) + (t(p.category) ? ' · ' + esc(t(p.category)) : '') + '</div>' +
+          '<div class="hp-chips">' + (dec ? '<span class="hp-ch ' + (dec === 'Go' ? 'go' : dec === 'Not Go' ? 'ng' : 'ur') + '">' + esc(dec) + '</span>' : '') + (t(p.status) ? '<span class="hp-ch">' + esc(t(p.status)) + '</span>' : '') +
+          (du ? '<span class="hp-ch ' + (p.urg === 'OVERDUE' ? 'bad' : '') + '">' + esc(du) + '</span>' : '') + '</div><div class="hp-rows">' +
+          '<div><span>Target submit</span><b>' + esc(isDate(p.submission) ? fmtS(p.submission) + (t(p.subTime) ? ' · ' + t(p.subTime) : '') : (t(p.submission) || '—')) + '</b></div>' +
+          (t(p.pic) ? '<div><span>PIC</span><b>' + esc(t(p.pic)) + '</b></div>' : '');
+        var td = S.today || ymd(new Date()), nx = (S.agenda || []).filter(function(a){ return a.rfqKey === p.key && a.status === 'Terjadwal' && a.date >= td; }).sort(function(a, b){ return a.date < b.date ? -1 : 1; })[0];
+        if(nx){ var T = AG_TYPES[nx.type] || AG_TYPES.lain; card += '<div><span>Agenda berikut</span><b>' + esc(T.l + ' · ' + cFmt(nx.date) + (nx.start ? ' ' + cTm(nx.start) : '')) + '</b></div>'; }
+        var L = (S.tenders || {})[p.key]; if(L && L.url) card += '<div><span>Tender</span><b>' + esc(tenderLabel(L)) + '</b></div>';
+        card += '</div>'; tc = p.urg === 'OVERDUE' ? '#ff6b6b' : p.urg === 'THIS WEEK' ? '#f5a524' : '#4c8dff';
+        items.push({ic: '📄', l: 'Buka detail', f: function(){ openDetail(p.key); }});
+        if(ed()){
+          items.push({ic: '📅', l: 'Tambah agenda', f: function(){ openAgenda({rfqKey: p.key}); }});
+          items.push({ic: '✏️', l: 'Update progress', f: function(){ openForm('update', p.key); }});
+        }
+        if(L && L.url) items.push({ic: '🔗', l: 'Buka di tender.asuka', f: function(){ window.open(L.url, '_blank', 'noopener'); }});
+        items.push({ic: '📋', l: 'Salin judul & deadline', f: function(){ copyText(t(p.title) + ' — ' + t(p.client) + ' · deadline ' + (isDate(p.submission) ? fmtD(p.submission) + (t(p.subTime) ? ' ' + t(p.subTime) : '') : (t(p.submission) || '—')), 'Judul & deadline disalin'); }});
+      } else {
+        var a = agOf(info.id); if(!a) return null;
+        var T2 = AG_TYPES[a.type] || AG_TYPES.lain; tc = T2.c;
+        card = '<div class="hp-ty">' + T2.i + ' ' + esc(T2.l) + (a.status !== 'Terjadwal' ? ' · ' + esc(a.status) : '') + '</div><div class="hp-t">' + esc(a.title) + '</div>' +
+          '<div class="hp-rows"><div><span>Tanggal</span><b>' + esc(cFmt(a.date)) + (a.start ? ' · ' + cTm(a.start) + (a.end ? '–' + cTm(a.end) : '') : '') + '</b></div>' +
+          (t(a.place) ? '<div><span>Lokasi</span><b>' + esc(cShort(a.place, 70)) + '</b></div>' : '') + (t(a.pic) ? '<div><span>PIC</span><b>' + esc(a.pic) + '</b></div>' : '') +
+          (t(a.rfqTitle) ? '<div><span>RFQ</span><b>' + esc(cShort(a.rfqTitle, 70)) + '</b></div>' : '') + (t(a.note) ? '<div><span>Catatan</span><b>' + esc(cShort(a.note, 90)) + '</b></div>' : '') + '</div>';
+        items.push({ic: ed() ? '✏️' : '👁', l: ed() ? 'Ubah agenda' : 'Lihat detail', f: function(){ openAgenda(a.id); }});
+        if(ed() && a.status !== 'Batal'){
+          items.push({ic: a.status === 'Selesai' ? '↺' : '✓', l: a.status === 'Selesai' ? 'Tandai belum selesai' : 'Tandai selesai', f: function(){ agToggle(a.id); }});
+          items.push({ic: '⏭', l: 'Pindah ke besok', f: function(){ agMove(a.id, cAdd(a.date, 1)); }});
+        }
+        items.push({ic: '📆', l: 'Tambah ke Google Calendar', f: function(){ window.open(agGcal(a), '_blank', 'noopener'); }});
+        if(a.rfqKey && projOf(a.rfqKey)) items.push({ic: '📄', l: 'Buka detail RFQ', f: function(){ openDetail(a.rfqKey); }});
+        if(ed()) items.push({ic: '🗑', l: 'Hapus agenda', danger: true, arm: true, f: function(){
+          api('deleteAgenda', a.id).then(function(){ S.agenda = (S.agenda || []).filter(function(x){ return x.id !== a.id; }); agAfter(); toast('Agenda dihapus'); })
+            .catch(function(e){ if(!e.handled) toast(e.message || 'Gagal menghapus', true); });
+        }});
+      }
+      return {card: card, items: items, tc: tc};
+    }
+
+    function closeMenu(){
+      if(!ov) return; hpOpen = false; ov.classList.remove('on'); clearTimeout(armTimer); clearHot(); touchMode = false; document.documentElement.classList.remove('hp-lock');
+      var o = ov; setTimeout(function(){ if(!hpOpen && o.parentNode){ o.parentNode.removeChild(o); if(ov === o) ov = null; } }, 260);
+    }
+    function clearHot(){ if(hot){ hot.classList.remove('hot'); hot = null; } }
+    function clearSel(){ try{ var s = window.getSelection && getSelection(); if(s && s.removeAllRanges) s.removeAllRanges(); }catch(e){} }
+    function runItem(bt){
+      var it = curItems[+bt.dataset.i]; if(!it) return;
+      if(it.arm && !bt.dataset.armed){ bt.dataset.armed = 1; bt.classList.add('arm'); bt.querySelector('.lb').textContent = 'Ketuk lagi untuk menghapus'; clearTimeout(armTimer); armTimer = setTimeout(function(){ if(bt.isConnected){ delete bt.dataset.armed; bt.classList.remove('arm'); bt.querySelector('.lb').textContent = it.l; } }, 3500); return; }
+      closeMenu(); try{ it.f(); }catch(err){ if(window.console) console.error(err); }
+    }
+    function slide(x, y){
+      if(!ov || !st) return;
+      if(!st.slid){ if(Math.abs(x - st.x) < 10 && Math.abs(y - st.y) < 10) return; st.slid = true; }   /* jari harus benar-benar bergeser dulu */
+      var el = document.elementFromPoint(x, y), it = el && el.closest ? el.closest('.hp-it') : null;
+      if(it === hot) return; clearHot(); hot = it;
+      if(it){ it.classList.add('hot'); try{ if(navigator.vibrate) navigator.vibrate(6); }catch(e){} }
+    }
+    function openMenu(el, x, y, touch){
+      if(hpOpen) return;
+      var info = infoOf(el); if(!info) return;
+      var b = build(info); if(!b) return;
+      hpOpen = true; openedAt = Date.now(); suppress = Date.now() + 800; curItems = b.items; clearSel();
+      if(touch){ touchMode = true; document.documentElement.classList.add('hp-lock'); }
+      try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){}
+      var o = document.createElement('div'); o.className = 'hp-ov'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-label', 'Menu cepat');
+      o.innerHTML = '<div class="hp-wrap" style="--tc:' + b.tc + '"><div class="hp-card">' + b.card + '</div><div class="hp-menu" role="menu">' +
+        b.items.map(function(it, i){ return '<button type="button" role="menuitem" class="hp-it' + (it.danger ? ' danger' : '') + '" data-i="' + i + '"><span class="ic">' + it.ic + '</span><span class="lb">' + esc(it.l) + '</span></button>'; }).join('') + '</div></div>';
+      document.body.appendChild(o); ov = o;
+      var w = o.querySelector('.hp-wrap'), r = w.getBoundingClientRect();
+      w.style.setProperty('--ox', Math.max(0, Math.min(r.width, x - r.left)) + 'px'); w.style.setProperty('--oy', Math.max(0, Math.min(r.height, y - r.top)) + 'px');
+      void o.offsetWidth; o.classList.add('on');
+      o.addEventListener('click', function(e){
+        if(Date.now() - openedAt < 450) return;
+        var bt = e.target.closest ? e.target.closest('.hp-it') : null;
+        if(!bt){ if(!e.target.closest('.hp-wrap') || e.target.classList.contains('hp-wrap')) closeMenu(); return; }
+        runItem(bt);
+      });
+      o.addEventListener('touchmove', function(e){ if(!e.target.closest('.hp-card')) e.preventDefault(); }, {passive: false});
+      var first = o.querySelector('.hp-it'); if(first && e_isKeyboardLike()) try{ first.focus(); }catch(e){}
+    }
+    function e_isKeyboardLike(){ try{ return !(window.matchMedia && matchMedia('(pointer:coarse)').matches); }catch(e){ return true; } }
+
+    /* ---- sentuhan: tahan ±0,4 detik; patch ini mengambil alih penanganan dari modul lama ---- */
+    function cancel(){ if(!st) return; clearTimeout(st.t1); clearTimeout(st.t2); if(st.el) st.el.classList.remove('hp-press'); st = null; }
+    function mine(e){ var tg = e.target && e.target.closest ? e.target.closest(SEL) : null; return (tg && !e.target.closest('input,select,textarea') && infoOf(tg)) ? tg : null; }
+    window.addEventListener('touchstart', function(e){
+      try{
+        if(hpOpen || !e.touches || e.touches.length !== 1) return;
+        var tg = mine(e); if(!tg) return;
+        var tc = e.touches[0]; cancel();
+        st = {el: tg, x: tc.clientX, y: tc.clientY, fired: false};
+        st.t1 = setTimeout(function(){ if(st) tg.classList.add('hp-press'); }, 140);
+        st.t2 = setTimeout(function(){ if(!st) return; st.fired = true; tg.classList.remove('hp-press'); openMenu(tg, st.x, st.y, true); }, HOLD);
+        e.stopImmediatePropagation();
+      }catch(err){}
+    }, {passive: true, capture: true});
+    window.addEventListener('touchmove', function(e){
+      try{
+        if(!st || !e.touches[0]) return; var tc = e.touches[0];
+        if(st.fired){ slide(tc.clientX, tc.clientY); if(e.cancelable) e.preventDefault(); }       /* menu terbuka: halaman di belakang TIDAK ikut bergerak */
+        else if(Math.abs(tc.clientX - st.x) > MOVE || Math.abs(tc.clientY - st.y) > MOVE) cancel();   /* belum terbuka: geser = batal (gulir biasa) */
+        e.stopImmediatePropagation();
+      }catch(err){}
+    }, {passive: false, capture: true});
+    ['touchend', 'touchcancel'].forEach(function(n){ window.addEventListener(n, function(e){
+      try{
+        if(!st) return;
+        var fired = st.fired, h = hot;
+        if(fired && e.cancelable) e.preventDefault();
+        cancel(); e.stopImmediatePropagation();
+        if(fired && n === 'touchend' && h && h.isConnected){ clearHot(); runItem(h); return; }
+        clearHot();
+      }catch(err){}
+    }, {passive: false, capture: true}); });
+    window.addEventListener('click', function(e){ if(Date.now() < suppress && !(ov && ov.contains(e.target))){ e.stopPropagation(); e.preventDefault(); } }, true);
+    window.addEventListener('contextmenu', function(e){
+      try{
+        if(e.shiftKey) return;
+        var tg = mine(e); if(!tg) return;
+        e.preventDefault(); e.stopImmediatePropagation(); if(!hpOpen) openMenu(tg, e.clientX, e.clientY);
+      }catch(err){}
+    }, true);
+    window.addEventListener('keydown', function(e){ if(e.key === 'Escape' && hpOpen) closeMenu(); }, true);
+    window.addEventListener('selectstart', function(e){ if(hpOpen || st) e.preventDefault(); }, true);
+    document.addEventListener('selectionchange', function(){ if(hpOpen || (st && st.fired)) clearSel(); });
+    window.addEventListener('touchmove', function(e){ if(hpOpen && touchMode && e.cancelable && !(e.target && e.target.closest && e.target.closest('.hp-card'))) e.preventDefault(); }, {passive: false, capture: true});
+    window.addEventListener('scroll', function(e){ if(hpOpen && !touchMode && !(ov && e.target && e.target.nodeType === 1 && ov.contains(e.target))) closeMenu(); }, true);
+  }catch(err){ try{ window.__hpPatchErr = String(err); }catch(e2){} }
+})();
+</script>
+<!-- ===== AKHIR PATCH ===== -->
+
 </body>
 </html>
