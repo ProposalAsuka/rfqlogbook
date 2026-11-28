@@ -2,7 +2,22 @@
 <html lang="id">
 <head>
 <base target="_top">
-<script>(function(){var m="dark";try{m=localStorage.getItem("rfq_theme")||"dark"}catch(e){}document.documentElement.setAttribute("data-theme",m);})();</script>
+<script>(function(){
+  var D=document.documentElement, MQ=null;
+  try{ MQ=window.matchMedia('(prefers-color-scheme: dark)'); }catch(e){}
+  function mode(){ var m='dark'; try{ m=localStorage.getItem('rfq_theme')||'dark'; }catch(e){} return (m==='light'||m==='dark'||m==='system')?m:'dark'; }
+  function paint(m){
+    var r = m==='system' ? ((MQ&&MQ.matches)?'dark':'light') : m;
+    D.setAttribute('data-theme',r); D.setAttribute('data-theme-mode',m);
+    try{ var t=document.querySelector('meta[name="theme-color"]'); if(t) t.setAttribute('content', r==='dark'?'#06080d':'#f3f5fa'); }catch(e){}
+    return r;
+  }
+  window.__applyTheme=function(m){ return paint(m||mode()); };
+  paint(mode());
+  document.addEventListener('DOMContentLoaded',function(){ paint(mode()); });
+  function onOs(){ if(mode()==='system'){ paint('system'); try{ window.dispatchEvent(new Event('themechange')); }catch(e){} } }
+  if(MQ){ if(MQ.addEventListener) MQ.addEventListener('change',onOs); else if(MQ.addListener) MQ.addListener(onOs); }
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Proposal Logbook</title>
@@ -2237,7 +2252,7 @@ html[data-theme=light] .bnav.has-gi>.gi{background:linear-gradient(180deg,rgba(2
 .bnav.has-gi button.active,.bnav.has-gi button.active:hover{background:transparent!important;box-shadow:none!important}
 
 /* ---- sentuhan: cahaya lembut, tekan = menyusut ---- */
-.rpl{background:radial-gradient(circle,rgba(255,255,255,.22),rgba(255,255,255,0) 66%)!important;opacity:.9!important;transform:scale(.35)}
+.rpl{background:radial-gradient(circle,rgba(255,255,255,.22),rgba(255,255,255,0) 66%)!important}
 html[data-theme=light] .rpl{background:radial-gradient(circle,rgba(37,99,235,.16),rgba(37,99,235,0) 66%)!important}
 @media (pointer:coarse){
   .rc,.kc,.cl-row,.cl-i,.ag-di,#tblActive tr,#tblLog tr{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
@@ -2487,7 +2502,11 @@ html[data-theme=light] .lg2-logo .lg2-badge{
           <option value="0">Mati</option><option value="1">1 mnt</option><option value="2">2 mnt</option><option value="3">3 mnt</option><option value="5">5 mnt</option><option value="10">10 mnt</option>
         </select>
       </label>
-      <button class="btn" id="btnTheme" onclick="toggleTheme()" title="Ganti tema terang / gelap">🌙 Gelap</button>
+      <div class="theme-seg" id="themeSeg" role="radiogroup" aria-label="Tema tampilan">
+        <button type="button" role="radio" data-m="system" onclick="pickTheme('system')" title="Ikuti pengaturan perangkat (otomatis terang / gelap)"><span class="ti"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 3.4a8.6 8.6 0 0 1 0 17.2z" fill="currentColor"/></svg></span><span class="tl">Sistem</span></button>
+        <button type="button" role="radio" data-m="light" onclick="pickTheme('light')" title="Tema terang"><span class="ti">☀</span><span class="tl">Terang</span></button>
+        <button type="button" role="radio" data-m="dark" onclick="pickTheme('dark')" title="Tema gelap"><span class="ti">🌙</span><span class="tl">Gelap</span></button>
+      </div>
       <div class="zoomwrap">
         <button class="zoombtn" id="zoomBtn" onclick="toggleZoomPop(event)" title="Zoom tampilan">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
@@ -3544,12 +3563,17 @@ document.addEventListener('click', function(e){
 /* ==================================================================
    TEMA & RINGKASAN (hero)
    ================================================================== */
+function getThemeMode(){ var m = document.documentElement.getAttribute('data-theme-mode'); if(!m){ try{ m = localStorage.getItem('rfq_theme'); }catch(e){} } return (m === 'light' || m === 'dark' || m === 'system') ? m : 'dark'; }
+function syncThemeSeg(m){ document.querySelectorAll('#themeSeg button').forEach(function(b){ var on = b.getAttribute('data-m') === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); }); }
 function setTheme(m){
+  if(m !== 'light' && m !== 'dark' && m !== 'system') m = 'dark';
   try{ localStorage.setItem('rfq_theme', m); }catch(e){}
-  document.documentElement.setAttribute('data-theme', m);
-  var b = document.getElementById('btnTheme'); if(b) b.textContent = m === 'dark' ? '☀ Terang' : '🌙 Gelap';
+  if(window.__applyTheme) window.__applyTheme(m); else document.documentElement.setAttribute('data-theme', m === 'light' ? 'light' : 'dark');
+  syncThemeSeg(m);
 }
-function toggleTheme(){ setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); render(); }
+function pickTheme(m){ setTheme(m); try{ render(); }catch(e){} }
+function toggleTheme(){ var o = ['system', 'light', 'dark']; pickTheme(o[(o.indexOf(getThemeMode()) + 1) % 3]); }
+window.addEventListener('themechange', function(){ try{ render(); }catch(e){} });   /* OS berganti terang/gelap saat mode Sistem */
 function toggleHero(){
   var h = $('hero'), closed = !h.classList.contains('closed');
   h.classList.toggle('closed', closed);
@@ -4960,7 +4984,7 @@ function showTemp(username, pw, title){
   document.querySelectorAll('#sortMode button').forEach(function(b){ b.onclick = function(){ setSortMode(b.dataset.m); render(); }; });
   var am = AUTO_DEFAULT; try{ var sv = localStorage.getItem('rfq_auto'); if(sv !== null) am = +sv; }catch(e){}
   setAuto(am);
-  setTheme(document.documentElement.getAttribute('data-theme') || 'light'); initHero();
+  setTheme(getThemeMode()); initHero();
   /* Klik kolom cari → cari di SEMUA RFQ: filter/rentang/menu sebelumnya dilepas (teks cari tetap) */
   $('fSearch').addEventListener('focus', function(){
     if(S.view === 'log') return;
@@ -5010,7 +5034,7 @@ if(!IS_GAS && 'serviceWorker' in navigator && (location.protocol === 'https:' ||
 
     var RPL = '.btn,.seg button,.fsel,.tile,.nav button,.rt,.rcols button,.ab,.tbtn,.rc,.kpi,.tneed';
     document.addEventListener('pointerdown', function(e){
-      if(reduce || e.button > 0) return;
+      if(reduce || e.button > 0 || e.pointerType === 'touch') return;   /* sentuh: pakai efek tekan halus (.tp), bukan ripple */
       var el = e.target && e.target.closest ? e.target.closest(RPL) : null; if(!el) return;
       var r = el.getBoundingClientRect(), d = Math.max(r.width, r.height) * 1.7;
       if(getComputedStyle(el).position === 'static') el.style.position = 'relative';
@@ -5642,7 +5666,7 @@ function agDecorate(){
       try{ new ResizeObserver(pos).observe(box); }catch(e){ window.addEventListener('resize', pos); }
       setTimeout(pos, 0); setTimeout(pos, 600); setTimeout(pos, 1800);
     }
-    glassInd($$('bnav'), 'button.active');
+    /* menu bawah: memakai lensa baru yang bisa ditahan & digeser (blok v21.11) */
     glassInd($$('calMode'), 'button.on');
     glassInd($$('sortMode'), 'button.on');
 
@@ -5766,6 +5790,218 @@ function agDecorate(){
   }catch(err){ try{ window.__ui21Err = String(err); }catch(e2){} }
 })();
 </script>
+<!-- ===== v21.11: tekan halus, menu bawah elegan + lensa geser, mode tema Sistem ===== -->
+<style>
+/* ============================================================
+   UI v21.11 — tekan kartu yang halus, menu bawah elegan + lensa geser, mode tema "Sistem"
+   ============================================================ */
+
+/* ---- 0. dasar sentuhan: tanpa kilatan abu-abu bawaan iOS ---- */
+html,*{-webkit-tap-highlight-color:transparent}
+
+/* ---- 1. tekan kartu: masuk cepat, KELUAR PELAN (tanpa potongan mendadak) ---- */
+@keyframes rplS{from{transform:scale(.3)}to{transform:scale(1)}}
+@keyframes rplF{from{opacity:.8}to{opacity:0}}
+.rpl{animation:rplS .7s cubic-bezier(.22,.8,.28,1) forwards,rplF .64s linear forwards}   /* ripple mouse: membesar cepat, memudar rata sampai 0 */
+@media (hover:none){ html[data-theme] .rc:hover,html[data-theme] .tile:hover,html[data-theme] .kpi:hover{transform:none} }   /* hover "lengket" di layar sentuh */
+html[data-theme] .rc,html[data-theme] .tile,html[data-theme] .kc{position:relative;transition:transform .65s cubic-bezier(.4,0,.2,1),box-shadow .4s ease,background-color .4s ease,border-color .4s ease,opacity .25s ease}
+html[data-theme] .rc::after,html[data-theme] .tile::after,html[data-theme] .kc::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:rgba(255,255,255,.07);opacity:0;transition:opacity .75s cubic-bezier(.42,0,.2,1)}
+html[data-theme=light] .rc::after,html[data-theme=light] .tile::after,html[data-theme=light] .kc::after{background:rgba(15,23,42,.05)}
+@media (hover:hover) and (pointer:fine){   /* PC: lebih lincah (hover & klik mouse) */
+  html[data-theme] .rc,html[data-theme] .tile,html[data-theme] .kc{transition-duration:.28s,.3s,.3s,.3s,.25s;transition-timing-function:cubic-bezier(.22,.8,.28,1)}
+  html[data-theme] .rc::after,html[data-theme] .tile::after,html[data-theme] .kc::after{transition-duration:.3s}
+}
+html[data-theme] .rc.tp,html[data-theme] .tile.tp,html[data-theme] .kc.tp,html[data-theme] .cl-row.tp,html[data-theme] .ag-di.tp{transform:scale(.982);transition-duration:.14s;transition-timing-function:cubic-bezier(.2,.8,.2,1)}
+html[data-theme] .rc.tp::after,html[data-theme] .tile.tp::after,html[data-theme] .kc.tp::after,html[data-theme] .rc.hp-press::after,html[data-theme] .kc.hp-press::after{opacity:1;transition-duration:.14s;transition-timing-function:cubic-bezier(.2,.8,.2,1)}
+html[data-theme] .rc.hp-press,html[data-theme] .kc.hp-press,html[data-theme] .cl-row.hp-press,html[data-theme] .cl-i.hp-press,html[data-theme] .ag-di.hp-press{filter:none;transition:transform .4s cubic-bezier(.2,.8,.2,1)!important}
+
+/* ---- 2. mode tema: Sistem / Terang / Gelap ---- */
+.theme-seg{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--gl-bg2,rgba(127,127,127,.12));border:1px solid var(--gl-bd,rgba(127,127,127,.18))}
+.theme-seg button{border:0;background:transparent;color:var(--ink-2);font:inherit;font-size:12px;font-weight:600;line-height:1;padding:6px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;transition:background-color .25s ease,color .25s ease,box-shadow .25s ease}
+.theme-seg button .ti{font-size:13px;line-height:1;display:inline-flex;align-items:center}
+.theme-seg button .ti svg{display:block}
+.theme-seg button.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 24%,transparent)}
+@media (min-width:801px) and (max-width:1240px){ .theme-seg .tl{display:none} .theme-seg button{padding:6px 9px} }
+.hctl.open .theme-seg{display:flex;width:100%;box-sizing:border-box}
+.hctl.open .theme-seg button{flex:1;padding:9px 6px;font-size:13px}
+
+/* ---- 3. MENU BAWAH (HP): kaca terang/gelap yang elegan ---- */
+html[data-theme] #bnav{
+  --bn-bg:rgba(255,255,255,.74);--bn-bd:rgba(15,23,42,.07);--bn-hi:rgba(255,255,255,.95);
+  --bn-ink:#5f6b7e;--bn-on:#1d4ed8;--bn-pill:rgba(37,99,235,.12);--bn-ring:rgba(37,99,235,.14);
+  --bn-ghost:rgba(255,255,255,.80);--bn-badge-ring:#fff;
+  --bn-sh:0 16px 36px -16px rgba(30,41,90,.38),0 2px 10px rgba(30,41,90,.07);
+  left:14px;right:14px;bottom:calc(12px + env(safe-area-inset-bottom));padding:5px;gap:0;border-radius:34px;
+  background:var(--bn-bg);border:1px solid var(--bn-bd);box-shadow:inset 0 1px 0 var(--bn-hi),var(--bn-sh);
+  -webkit-backdrop-filter:blur(28px) saturate(1.9);backdrop-filter:blur(28px) saturate(1.9);
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+html[data-theme=dark] #bnav{
+  --bn-bg:rgba(20,22,32,.56);--bn-bd:rgba(255,255,255,.12);--bn-hi:rgba(255,255,255,.14);
+  --bn-ink:rgba(255,255,255,.60);--bn-on:#fff;--bn-pill:rgba(255,255,255,.13);--bn-ring:rgba(255,255,255,.10);
+  --bn-ghost:rgba(34,38,54,.78);--bn-badge-ring:rgba(24,26,38,.96);
+  --bn-sh:0 18px 40px -14px rgba(0,0,0,.78),0 2px 10px rgba(0,0,0,.35)}
+html[data-theme] #bnav button,html[data-theme] #bnav .bn-it{
+  flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:8px 2px 7px;border:0;border-radius:999px;background:transparent!important;box-shadow:none!important;color:var(--bn-ink);
+  font:inherit;cursor:pointer;transition:color .25s ease}
+html[data-theme] #bnav button{z-index:2}
+html[data-theme] #bnav button.active,html[data-theme] #bnav .bn-it.on{color:var(--bn-on)}
+html[data-theme] #bnav .bi{display:flex;height:24px;align-items:center;justify-content:center;transition:transform .42s cubic-bezier(.3,1.4,.5,1)}
+html[data-theme] #bnav .bi svg{width:23px;height:23px;stroke-width:1.75}
+html[data-theme] #bnav button.active .bi,html[data-theme] #bnav .bn-it.on .bi{transform:translateY(-1px) scale(1.07)}
+html[data-theme] #bnav button:active:not(.active) .bi{transform:scale(.92)}
+html[data-theme] #bnav .bl{font-size:10px;font-weight:600;letter-spacing:.012em;line-height:1.1}
+html[data-theme] #bnav .bc{top:2px;right:calc(50% - 25px);font-size:9.5px;line-height:15px;min-width:16px;padding:0 4px;box-shadow:0 0 0 2px var(--bn-badge-ring)}
+html[data-theme] #bnav .bc:not(.red){background:#22c55e;color:#05230f}
+html[data-theme] #bnav .bc.red{background:#ef4444;color:#fff}
+
+/* lensa: bantalan pilihan; saat ditahan terangkat jadi kaca bening yang memperbesar isinya */
+#bnav .bn-lens{position:absolute;left:0;top:0;z-index:1;pointer-events:none;border-radius:999px;font-style:normal;transform:translate3d(var(--bx,0px),var(--by,0px),0);
+  transition:transform .6s cubic-bezier(.3,1.35,.5,1),width .45s cubic-bezier(.3,1.35,.5,1),opacity .25s ease}
+#bnav .bn-lens.off{opacity:0}
+#bnav .bn-lens.nt,#bnav .bn-lens.drag{transition:none}
+#bnav .bn-lens.lift{z-index:3}
+#bnav .bn-lens-in{position:absolute;inset:0;border-radius:inherit;overflow:hidden;background:var(--bn-pill);box-shadow:inset 0 0 0 1px var(--bn-ring);transform:scale(1);
+  transition:transform .55s cubic-bezier(.3,1.5,.45,1),background-color .3s ease,box-shadow .3s ease}
+#bnav .bn-lens.lift .bn-lens-in{transform:scale(1.3);background:var(--bn-ghost);-webkit-backdrop-filter:blur(7px) saturate(1.8);backdrop-filter:blur(7px) saturate(1.8);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),inset 3px 3px 9px -3px rgba(255,255,255,.55),inset -3px -3px 9px -3px rgba(140,180,255,.45),0 12px 26px -10px rgba(0,0,0,.55)}
+html[data-theme=light] #bnav .bn-lens.lift .bn-lens-in{box-shadow:inset 0 0 0 1px rgba(255,255,255,.9),inset 3px 3px 9px -3px #fff,inset -3px -3px 9px -3px rgba(37,99,235,.28),0 12px 24px -10px rgba(30,41,90,.4)}
+#bnav .bn-lens-in::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;opacity:0;transition:opacity .3s ease;
+  background:linear-gradient(125deg,rgba(90,205,255,.7),rgba(255,255,255,.2) 36%,rgba(255,255,255,.12) 62%,rgba(255,120,200,.6));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+#bnav .bn-lens.lift .bn-lens-in::after{opacity:1}
+#bnav .bn-mag{position:absolute;left:0;top:0;display:flex;box-sizing:border-box;opacity:0;transition:opacity .22s ease;pointer-events:none;
+  transform:translate3d(calc(var(--bx,0px) * -1),calc(var(--by,0px) * -1),0)}
+#bnav .bn-lens.lift .bn-mag{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  #bnav .bn-lens,#bnav .bn-lens-in,#bnav .bi{transition-duration:.01s!important}
+  #bnav .bn-mag{display:none}
+  #bnav .bn-lens.lift .bn-lens-in{transform:none}
+}
+</style>
+<script>
+/* UI v21.11: tekan kartu halus, menu bawah dengan lensa yang bisa ditahan & digeser, tombol tema */
+(function(){
+  try{
+    var reduce = false; try{ reduce = matchMedia('(prefers-reduced-motion:reduce)').matches; }catch(e){}
+
+    /* ---------- 1. umpan balik tekan kartu (sentuh): masuk cepat, keluar pelan ---------- */
+    var PRESS = '.rc,.tile,.kc,.cl-row,.ag-di', cur = null, tm = 0;
+    function clr(){ if(cur){ cur.classList.remove('tp'); cur = null; } clearTimeout(tm); }
+    document.addEventListener('pointerdown', function(e){
+      if(e.pointerType !== 'touch') return;
+      var el = e.target && e.target.closest ? e.target.closest(PRESS) : null;
+      if(!el || el.closest('.modal')) return;
+      clr(); cur = el; el.classList.add('tp'); tm = setTimeout(clr, 6000);
+    }, {passive: true});
+    ['pointerup', 'pointercancel'].forEach(function(n){ document.addEventListener(n, clr, {passive: true, capture: true}); });
+    document.addEventListener('scroll', clr, {passive: true, capture: true});
+
+    /* ---------- 2. menu bawah: lensa yang bisa ditahan & digeser ---------- */
+    var bar = document.getElementById('bnav');
+    if(bar && !bar.__bnLens){
+      bar.__bnLens = 1;
+      var lens = document.createElement('i'); lens.className = 'bn-lens off'; lens.setAttribute('aria-hidden', 'true');
+      lens.innerHTML = '<span class="bn-lens-in"><span class="bn-mag"></span></span>';
+      bar.insertBefore(lens, bar.firstChild);
+      var mag = lens.querySelector('.bn-mag');
+      var R = [], BW = 0, BH = 0, LW = 0, st = null, raf = 0, cx = 0, tx = 0, lastIdx = -1, suppressTs = 0, internal = false;
+      function btns(){ return Array.prototype.filter.call(bar.children, function(n){ return n.tagName === 'BUTTON'; }); }
+      function haptic(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+      function measure(){
+        var bb = bar.getBoundingClientRect(), ox = bb.left + bar.clientLeft, oy = bb.top + bar.clientTop;
+        BW = bar.clientWidth; BH = bar.clientHeight;
+        R = btns().map(function(b){ var r = b.getBoundingClientRect(); return {x: r.left - ox, y: r.top - oy, w: r.width, h: r.height, cx: r.left - ox + r.width / 2}; });
+        return R.length > 0 && BW > 0;
+      }
+      function setLeft(x){ lens.style.setProperty('--bx', x + 'px'); }
+      function place(r){ lens.style.width = r.w + 'px'; lens.style.height = r.h + 'px'; LW = r.w; lens.style.setProperty('--by', r.y + 'px'); setLeft(r.x); }
+      function activeIdx(){ var b = btns(); for(var i = 0; i < b.length; i++) if(b[i].classList.contains('active')) return i; return -1; }
+      function rest(anim){
+        if(st && st.lifted) return;
+        if(!measure()){ lens.classList.add('off'); return; }
+        var i = activeIdx(); if(i < 0){ lens.classList.add('off'); return; }
+        if(!anim) lens.classList.add('nt');
+        place(R[i]); lens.classList.remove('off');
+        if(!anim){ void lens.offsetWidth; lens.classList.remove('nt'); }
+      }
+      function idxAt(x){ var best = 0, bd = 1e9; for(var i = 0; i < R.length; i++){ var d = Math.abs(R[i].cx - x); if(d < bd){ bd = d; best = i; } } return best; }
+      function clampC(x){ return Math.max(R[0].cx, Math.min(R[R.length - 1].cx, x)); }
+      function syncMag(){
+        var cs = getComputedStyle(bar), items = btns();
+        mag.style.cssText = 'width:' + BW + 'px;height:' + BH + 'px;padding:' + cs.paddingTop + ' ' + cs.paddingRight + ' ' + cs.paddingBottom + ' ' + cs.paddingLeft + ';gap:' + (cs.columnGap === 'normal' ? '0px' : cs.columnGap);
+        mag.innerHTML = '';
+        items.forEach(function(b){
+          var it = document.createElement('div'); it.className = 'bn-it' + (b.classList.contains('active') ? ' on' : '');
+          it.innerHTML = b.innerHTML; Array.prototype.forEach.call(it.querySelectorAll('[id]'), function(n){ n.removeAttribute('id'); });
+          mag.appendChild(it);
+        });
+      }
+      function peek(i){ Array.prototype.forEach.call(mag.children, function(n, k){ n.classList.toggle('on', k === i); }); }   /* ikon di bawah lensa menyala */
+      function visualLeft(){ try{ return new DOMMatrix(getComputedStyle(lens).transform).m41; }catch(e){ return null; } }
+      function lift(){
+        if(!st || st.lifted || !R.length) return;
+        st.lifted = true; syncMag();
+        var vl = visualLeft(); cx = (vl == null ? R[Math.max(0, activeIdx())].x : vl) + LW / 2;
+        if(st.lastX != null) tx = clampC(st.lastX - st.ox); else tx = clampC(st.x0 - st.ox);
+        lastIdx = idxAt(cx); peek(lastIdx);
+        lens.classList.remove('off'); lens.classList.add('drag', 'lift'); haptic(8);
+        if(!raf) raf = requestAnimationFrame(loop);
+      }
+      function loop(){
+        raf = 0; if(!st || !st.lifted) return;
+        cx += (tx - cx) * .34; if(Math.abs(tx - cx) < .15) cx = tx;
+        setLeft(cx - LW / 2);
+        var i = idxAt(cx); if(i !== lastIdx){ lastIdx = i; haptic(5); peek(i); }
+        raf = requestAnimationFrame(loop);
+      }
+      bar.addEventListener('pointerdown', function(e){
+        if(st) return; if(e.pointerType === 'mouse' && e.button !== 0) return;
+        var b = e.target && e.target.closest ? e.target.closest('button') : null; if(!b || b.parentNode !== bar) return;
+        if(!measure()) return;
+        var bb = bar.getBoundingClientRect();
+        st = {id: e.pointerId, x0: e.clientX, y0: e.clientY, ox: bb.left + bar.clientLeft, idx: btns().indexOf(b), lifted: false, lastX: null};
+        try{ bar.setPointerCapture(e.pointerId); }catch(_){}
+        st.t = setTimeout(function(){ if(st) lift(); }, 100);
+      });
+      bar.addEventListener('pointermove', function(e){
+        if(!st || e.pointerId !== st.id) return;
+        st.lastX = e.clientX;
+        if(!st.lifted && Math.abs(e.clientX - st.x0) > 5){ clearTimeout(st.t); lift(); }
+        if(st.lifted) tx = clampC(e.clientX - st.ox);
+      });
+      function finish(e, cancel){
+        if(!st || (e && e.pointerId !== st.id)) return;
+        var s = st; st = null; clearTimeout(s.t); if(raf){ cancelAnimationFrame(raf); raf = 0; }
+        try{ bar.releasePointerCapture(s.id); }catch(_){}
+        var items = btns(), act = activeIdx(), target = s.lifted ? idxAt(cx) : s.idx;
+        if(cancel && act >= 0) target = act;
+        lens.classList.remove('drag', 'lift'); lens.classList.remove('off');
+        if(R[target]) place(R[target]);                         /* mengendap dengan pegas */
+        suppressTs = Date.now();
+        if(!cancel){
+          var b = items[target];
+          if(b && (!s.lifted || target !== act)){ internal = true; try{ b.click(); }finally{ internal = false; } }
+        }
+      }
+      bar.addEventListener('pointerup', function(e){ finish(e, false); });
+      bar.addEventListener('pointercancel', function(e){ finish(e, true); });
+      bar.addEventListener('lostpointercapture', function(e){ if(st && e.pointerId === st.id) finish(e, true); });
+      bar.addEventListener('click', function(e){ if(internal) return; if(Date.now() - suppressTs < 700){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);   /* klik bawaan sesudah gestur ditahan (hindari dobel) */
+      bar.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+      try{
+        var mo = new MutationObserver(function(){ if(!st) rest(true); });
+        btns().forEach(function(b){ mo.observe(b, {attributes: true, attributeFilter: ['class']}); });
+      }catch(e){}
+      try{ new ResizeObserver(function(){ rest(false); }).observe(bar); }catch(e){ window.addEventListener('resize', function(){ rest(false); }); }
+      window.addEventListener('orientationchange', function(){ setTimeout(function(){ rest(false); }, 300); });
+      [0, 300, 900, 2200].forEach(function(ms){ setTimeout(function(){ rest(false); }, ms); });
+      try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ rest(false); }); }catch(e){}
+    }
+  }catch(err){ try{ window.__v22Err = String(err); }catch(e2){} }
+})();
+</script>
+<!-- ===== AKHIR v21.11 ===== -->
 <!-- ===== PATCH HAPTIC TOUCH v21.10.1 — tempel TEPAT DI ATAS </body> ===== -->
 <style>
 /* Patch Haptic Touch v21.10 — tanpa seleksi teks; geser-lalu-lepas pada item */
